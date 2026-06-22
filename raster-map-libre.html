@@ -1,0 +1,110 @@
+<!-- ============================================================
+     SELF-CONTAINED LAND-USE MAP (MapLibre + COG)
+     Paste everything below into a Squarespace Code Block.
+     Replace COG_URL with your uploaded file's URL.
+     ============================================================ -->
+
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+
+<style>
+    /* Explicit height — do NOT use height:100% in Squarespace, the container has no height. */
+    #lu-map {
+        position: relative;
+        height: 600px;
+        width: 100%;
+    }
+    #lu-legend {
+        position: absolute;
+        bottom: 50px;
+        right: 12px;
+        z-index: 1;
+        background: white;
+        padding: 8px 10px;
+        font: 12px/1.4 sans-serif;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        border-radius: 1px;
+    }
+    #lu-legend i {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        vertical-align: middle;
+        opacity: 0.85;
+    }
+</style>
+
+<div id="lu-map">
+    <div id="lu-legend">
+        <strong>Zoning District Type</strong><br />
+        <i style="background: #e7dad0"></i>Nonresidential<br />
+        <i style="background: #d3dec7"></i>Protected<br />
+        <i style="background: #baadcb"></i>Residential<br />
+        <i style="background: #817ca4"></i>Residential + Nonresidential<br />
+        <i style="background: #c8cace"></i>Unzoned + ROW<br />
+        <i style="background: #a6c8c8"></i>Water
+    </div>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script type="module">
+    import { cogProtocol } from "https://cdn.jsdelivr.net/npm/@geomatico/maplibre-cog-protocol/+esm";
+
+    // ---- CHANGE THIS to your uploaded COG's URL (same-origin /s/... or full https://...) ----
+    // Local testing value below; for Squarespace use "/s/test6_cog.tif" or the full https:// URL.
+    const COG_URL = "test6_cog.tif";
+
+    // Bounds of the raster (lon/lat) from gdalinfo — used to frame the view.
+    const BOUNDS = [
+        [-116.0744, 34.8497], // [west, south]
+        [-113.6482, 37.1259], // [east, north]
+    ];
+
+    function initLandUseMap() {
+        const el = document.getElementById("lu-map");
+        if (!el || el.dataset.inited) return; // guard against double-init on Squarespace Ajax
+        el.dataset.inited = "1";
+
+        maplibregl.addProtocol("cog", cogProtocol);
+
+        const map = new maplibregl.Map({
+            container: "lu-map",
+            style: {
+                version: 8,
+                sources: {
+                    carto: {
+                        type: "raster",
+                        tiles: ["https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"],
+                        tileSize: 256,
+                        attribution: "© OpenStreetMap contributors, © CARTO",
+                    },
+                },
+                layers: [{ id: "carto", type: "raster", source: "carto" }],
+            },
+            center: [-115.14, 36.17],
+            zoom: 9,
+        });
+
+        map.addControl(new maplibregl.NavigationControl());
+
+        map.on("load", () => {
+            map.addSource("landuse", {
+                type: "raster",
+                url: "cog://" + COG_URL,
+                tileSize: 256,
+            });
+            map.addLayer({
+                id: "landuse",
+                type: "raster",
+                source: "landuse",
+                paint: { "raster-opacity": 0.9, "raster-resampling": "linear" },
+            });
+            map.fitBounds(BOUNDS, { padding: 20, duration: 0 });
+        });
+    }
+
+    // Run now, and again on Squarespace Ajax page transitions.
+    initLandUseMap();
+    window.addEventListener("DOMContentLoaded", initLandUseMap);
+    window.addEventListener("mercury:load", initLandUseMap);
+</script>

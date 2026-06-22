@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Clark County Land Use Raster Demo</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+        <style>
+            html,
+            body,
+            #map {
+                height: 100%;
+                margin: 0;
+            }
+            .legend {
+                background: white;
+                padding: 8px 10px;
+                font: 12px/1.4 sans-serif;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+                border-radius: 4px;
+            }
+            .legend i {
+                display: inline-block;
+                width: 14px;
+                height: 14px;
+                margin-right: 6px;
+                vertical-align: middle;
+                opacity: 0.85;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
+        <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
+        <script>
+            // Centered on Clark County (Las Vegas); fitBounds below snaps to the raster once it loads.
+            const map = L.map("map").setView([36.17, -115.14], 11);
+
+            const basemap = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", {
+                attribution: "&copy; OpenStreetMap contributors",
+                maxZoom: 19,
+            }).addTo(map);
+            fetch("/s/test6_3857.tif")
+                .then((res) => res.arrayBuffer())
+                .then((buf) => parseGeoraster(buf))
+                .then((georaster) => {
+                    const landuse = new GeoRasterLayer({
+                        georaster,
+                        opacity: 0.9,
+                        resolution: 128, // samples per tile; lower = faster, higher = sharper
+                        resampleMethod: "bilinear", // smooths the blocky 30m pixels when zoomed in
+                    });
+                    landuse.addTo(map);
+                    map.fitBounds(landuse.getBounds());
+
+                    L.control.layers({ OpenStreetMap: basemap }, { "Land use": landuse }).addTo(map);
+                })
+                .catch((err) => console.error("Failed to load test6_cog.tif:", err));
+
+            // Legend (matches the baked-in colors from test5.tif.aux.xml)
+            const legend = L.control({ position: "bottomright" });
+            legend.onAdd = () => {
+                const div = L.DomUtil.create("div", "legend");
+                const items = [
+                    ["#e7dad0", "Nonresidential"],
+                    ["#d3dec7", "Protected"],
+                    ["#baadcb", "Residential"],
+                    ["#817ca4", "Residential + Nonresidential"],
+                    ["#c8cace", "Unzoned + ROW"],
+                    ["#a6c8c8", "Water"],
+                ];
+                div.innerHTML =
+                    "<strong>Zoning District Type</strong><br>" +
+                    items.map(([c, l]) => `<i style="background:${c}"></i>${l}`).join("<br>");
+                return div;
+            };
+            legend.addTo(map);
+        </script>
+    </body>
+</html>
