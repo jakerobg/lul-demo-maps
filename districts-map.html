@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Zoning Districts Sample Map - Lafayette, CO</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+        <style>
+            .lul-map-section {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            }
+            .lul-map-eyebrow {
+                font-size: 13px;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.6);
+                margin-bottom: 20px;
+            }
+            #lul-districts-map {
+                width: 100%;
+                height: 480px;
+                border-radius: 4px;
+                border: 1px solid rgba(57, 51, 72, 0.15);
+            }
+            .lul-map-caption {
+                font-size: 12px;
+                color: rgba(57, 51, 72, 0.5);
+                margin-top: 10px;
+            }
+            .leaflet-popup-content-wrapper {
+                border-radius: 4px !important;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+                padding: 0 !important;
+            }
+            .leaflet-popup-content {
+                margin: 0 !important;
+                width: auto !important;
+            }
+            .lul-popup {
+                padding: 14px 16px;
+                min-width: 200px;
+            }
+            .lul-popup-name {
+                font-size: 14px;
+                font-weight: 700;
+                color: #393348;
+                margin-bottom: 4px;
+            }
+            .lul-popup-type {
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.5);
+                margin-bottom: 10px;
+            }
+            .lul-popup-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 16px;
+                font-size: 12px;
+                color: rgba(57, 51, 72, 0.6);
+                margin-bottom: 3px;
+            }
+            .lul-popup-row span:last-child {
+                font-weight: 600;
+                color: #393348;
+                text-align: right;
+            }
+            .lul-popup-divider {
+                border: none;
+                border-top: 1px solid rgba(57, 51, 72, 0.1);
+                margin: 8px 0;
+            }
+        </style>
+
+        <div class="lul-map-section">
+            <div class="lul-map-eyebrow" style="display: flex; justify-content: space-between">
+                <span>Zoning Districts Sample: Lafayette, CO</span>
+                <span>18 Districts</span>
+            </div>
+            <div id="lul-districts-map"></div>
+            <p class="lul-map-caption">
+                Each color is a distinct zoning district. Click any polygon to see its governing rules.
+            </p>
+        </div>
+
+        <script>
+            var DISTRICTS_DATA;
+
+            (function () {
+                var map = L.map("lul-districts-map", {
+                    center: [40.0037, -105.1064],
+                    zoom: 13,
+                    zoomControl: true,
+                    scrollWheelZoom: false,
+                    keyboard: false,
+                });
+
+                L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+                    attribution:
+                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+                    subdomains: "abcd",
+                    maxZoom: 19,
+                }).addTo(map);
+
+                // Assign each unique district a distinct hue spread across the color wheel
+                // Uses golden angle stepping for maximum perceptual separation
+                var districtIndex = {};
+
+                function districtColor(id) {
+                    if (!(id in districtIndex)) districtIndex[id] = Object.keys(districtIndex).length;
+                    // Golden angle: 137.508 degrees — guarantees no two adjacent hues are similar
+                    var hue = (districtIndex[id] * 137.508) % 360;
+                    return "hsl(" + Math.round(hue) + ",42%,58%)";
+                }
+
+                function formatType(t) {
+                    if (t === "primarily_residential") return "Primarily Residential";
+                    if (t === "nonresidential") return "Nonresidential";
+                    if (t === "mixed") return "Mixed";
+                    return t;
+                }
+
+                function fmt(t) {
+                    if (!t || t === "null") return "—";
+                    return t.charAt(0).toUpperCase() + t.slice(1);
+                }
+
+                function popupHtml(p) {
+                    return (
+                        '<div class="lul-popup">' +
+                        '<div class="lul-popup-name">' +
+                        p.name +
+                        "</div>" +
+                        '<div class="lul-popup-type">' +
+                        formatType(p.type) +
+                        " &middot; " +
+                        Math.round(p.acres) +
+                        " acres</div>" +
+                        '<hr class="lul-popup-divider"/>' +
+                        '<div class="lul-popup-row"><span>1-Family</span><span>' +
+                        fmt(p.family1_treatment) +
+                        "</span></div>" +
+                        '<div class="lul-popup-row"><span>2-Family</span><span>' +
+                        fmt(p.family2_treatment) +
+                        "</span></div>" +
+                        '<div class="lul-popup-row"><span>3-Family</span><span>' +
+                        fmt(p.family3_treatment) +
+                        "</span></div>" +
+                        '<div class="lul-popup-row"><span>4+-Family</span><span>' +
+                        fmt(p.family4_treatment) +
+                        "</span></div>" +
+                        "</div>"
+                    );
+                }
+
+                fetch("lafayette_co_districts_sample.geojson")
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error("HTTP " + resp.status);
+                        return resp.json();
+                    })
+                    .then(function (data) {
+                        DISTRICTS_DATA = data;
+                        var layer = L.geoJSON(DISTRICTS_DATA, {
+                            style: function (feature) {
+                                return {
+                                    fillColor: districtColor(feature.properties.name),
+                                    fillOpacity: 0.6,
+                                    color: "#fff",
+                                    weight: 1.5,
+                                };
+                            },
+                            onEachFeature: function (feature, layer) {
+                                layer.bindPopup(popupHtml(feature.properties), { maxWidth: 260 });
+                                layer.on("mouseover", function () {
+                                    layer.setStyle({ fillOpacity: 0.9, weight: 2 });
+                                });
+                                layer.on("mouseout", function () {
+                                    layer.setStyle({ fillOpacity: 0.6, weight: 1.5 });
+                                });
+                            },
+                        }).addTo(map);
+                        map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+                    })
+                    .catch(function (err) {
+                        console.error("Failed to load districts geojson:", err);
+                    });
+            })();
+        </script>
+    </body>
+</html>
