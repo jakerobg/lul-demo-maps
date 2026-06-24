@@ -31,7 +31,7 @@
             }
             #lul-districts-map {
                 width: 100%;
-                height: 480px;
+                height: 580px;
                 border-radius: 4px;
                 border: 1px solid rgba(57, 51, 72, 0.15);
             }
@@ -104,10 +104,10 @@
 
             (function () {
                 var map = L.map("lul-districts-map", {
-                    center: [40.0037, -105.1064],
+                    center: [39.991, -105.1064],
                     zoom: 13,
                     zoomControl: true,
-                    scrollWheelZoom: false,
+                    scrollWheelZoom: true,
                     keyboard: false,
                 });
 
@@ -195,7 +195,7 @@
                                 });
                             },
                         }).addTo(map);
-                        map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+                        map.setView([39.991, -105.1064], 13, { animate: false });
                     })
                     .catch(function (err) {
                         console.error("Failed to load districts geojson:", err);
