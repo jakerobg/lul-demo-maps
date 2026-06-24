@@ -180,16 +180,16 @@
                                     fillColor: sliceColor(feature.properties.slice_id),
                                     fillOpacity: 0.6,
                                     color: "#fff",
-                                    weight: 1.5,
+                                    weight: 0.75,
                                 };
                             },
                             onEachFeature: function (feature, layer) {
                                 layer.bindPopup(popupHtml(feature.properties), { maxWidth: 260 });
                                 layer.on("mouseover", function () {
-                                    layer.setStyle({ fillOpacity: 0.9, weight: 2 });
+                                    layer.setStyle({ fillOpacity: 0.9, weight: 1.25 });
                                 });
                                 layer.on("mouseout", function () {
-                                    layer.setStyle({ fillOpacity: 0.6, weight: 1.5 });
+                                    layer.setStyle({ fillOpacity: 0.6, weight: 0.75 });
                                 });
                             },
                         }).addTo(map);
