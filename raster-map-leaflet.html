@@ -1,83 +1,165 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <meta charset="utf-8" />
-        <title>Clark County Land Use Raster Demo</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Zoning Raster Sample Map - Clark County, NV</title>
         <style>
             html,
-            body,
-            #map {
-                height: 100%;
+            body {
                 margin: 0;
-            }
-            .legend {
-                background: white;
-                padding: 8px 10px;
-                font: 12px/1.4 sans-serif;
-                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-                border-radius: 4px;
-            }
-            .legend i {
-                display: inline-block;
-                width: 14px;
-                height: 14px;
-                margin-right: 6px;
-                vertical-align: middle;
-                opacity: 0.85;
+                padding: 0;
+                overflow: hidden;
             }
         </style>
     </head>
     <body>
-        <div id="map"></div>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
         <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
+
+        <style>
+            .lul-map-section {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            }
+            .lul-map-eyebrow {
+                font-size: 13px;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.6);
+                margin-bottom: 20px;
+            }
+            #lul-raster-map {
+                width: 100%;
+                height: 580px;
+                border-radius: 4px;
+                border: 1px solid rgba(57, 51, 72, 0.15);
+            }
+            .lul-map-caption {
+                font-size: 12px;
+                color: rgba(57, 51, 72, 0.5);
+                margin-top: 10px;
+            }
+            .lul-legend {
+                background: #fff;
+                padding: 12px 14px;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                border-radius: 4px;
+                border: 1px solid rgba(57, 51, 72, 0.12);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            }
+            .lul-legend-title {
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.5);
+                margin-bottom: 8px;
+            }
+            .lul-legend-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 12px;
+                color: #393348;
+                margin-bottom: 4px;
+            }
+            .lul-legend-row:last-child {
+                margin-bottom: 0;
+            }
+            .lul-legend-swatch {
+                display: inline-block;
+                width: 14px;
+                height: 14px;
+                border-radius: 2px;
+                opacity: 0.85;
+                flex-shrink: 0;
+            }
+        </style>
+
+        <div class="lul-map-section">
+            <div class="lul-map-eyebrow" style="display: flex; justify-content: space-between">
+                <span>Zoning Raster Sample: Clark County, NV</span>
+                <span>6 District Types</span>
+            </div>
+            <div id="lul-raster-map"></div>
+            <p class="lul-map-caption">
+                Each pixel is colored by its zoning district type. Pan and zoom to explore the rasterized coverage.
+            </p>
+        </div>
+
         <script>
-            // Centered on Clark County (Las Vegas); fitBounds below snaps to the raster once it loads.
-            const map = L.map("map").setView([36.17, -115.14], 11);
+            var RASTER_LAYER;
 
-            const basemap = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", {
-                attribution: "&copy; OpenStreetMap contributors",
-                maxZoom: 19,
-            }).addTo(map);
-            fetch("/s/test6_3857.tif")
-                .then((res) => res.arrayBuffer())
-                .then((buf) => parseGeoraster(buf))
-                .then((georaster) => {
-                    const landuse = new GeoRasterLayer({
-                        georaster,
-                        opacity: 0.9,
-                        resolution: 128, // samples per tile; lower = faster, higher = sharper
-                        resampleMethod: "bilinear", // smooths the blocky 30m pixels when zoomed in
+            (function () {
+                var map = L.map("lul-raster-map", {
+                    center: [36.17, -115.14],
+                    zoom: 11,
+                    zoomControl: true,
+                    scrollWheelZoom: true,
+                    keyboard: false,
+                });
+
+                L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+                    attribution:
+                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+                    subdomains: "abcd",
+                    maxZoom: 19,
+                }).addTo(map);
+
+                fetch("test6_cog.tif")
+                    .then(function (res) {
+                        if (!res.ok) throw new Error("HTTP " + res.status);
+                        return res.arrayBuffer();
+                    })
+                    .then(function (buf) {
+                        return parseGeoraster(buf);
+                    })
+                    .then(function (georaster) {
+                        RASTER_LAYER = new GeoRasterLayer({
+                            georaster: georaster,
+                            opacity: 0.9,
+                            resolution: 128, // samples per tile; lower = faster, higher = sharper
+                            resampleMethod: "bilinear", // smooths the blocky pixels when zoomed in
+                        });
+                        RASTER_LAYER.addTo(map);
+                        map.fitBounds(RASTER_LAYER.getBounds());
+                    })
+                    .catch(function (err) {
+                        console.error("Failed to load test6_cog.tif:", err);
                     });
-                    landuse.addTo(map);
-                    map.fitBounds(landuse.getBounds());
 
-                    L.control.layers({ OpenStreetMap: basemap }, { "Land use": landuse }).addTo(map);
-                })
-                .catch((err) => console.error("Failed to load test6_cog.tif:", err));
-
-            // Legend (matches the baked-in colors from test5.tif.aux.xml)
-            const legend = L.control({ position: "bottomright" });
-            legend.onAdd = () => {
-                const div = L.DomUtil.create("div", "legend");
-                const items = [
-                    ["#e7dad0", "Nonresidential"],
-                    ["#d3dec7", "Protected"],
-                    ["#baadcb", "Residential"],
-                    ["#817ca4", "Residential + Nonresidential"],
-                    ["#c8cace", "Unzoned + ROW"],
-                    ["#a6c8c8", "Water"],
-                ];
-                div.innerHTML =
-                    "<strong>Zoning District Type</strong><br>" +
-                    items.map(([c, l]) => `<i style="background:${c}"></i>${l}`).join("<br>");
-                return div;
-            };
-            legend.addTo(map);
+                // Legend — matches the baked-in colors from the raster
+                var legend = L.control({ position: "bottomright" });
+                legend.onAdd = function () {
+                    var div = L.DomUtil.create("div", "lul-legend");
+                    var items = [
+                        ["#baadcb", "Residential"],
+                        ["#817ca4", "Residential + Nonresidential"],
+                        ["#e7dad0", "Nonresidential"],
+                        ["#d3dec7", "Protected"],
+                        ["#c8cace", "Unzoned + ROW"],
+                        ["#a6c8c8", "Water"],
+                    ];
+                    div.innerHTML =
+                        '<div class="lul-legend-title">Zoning District Type</div>' +
+                        items
+                            .map(function (item) {
+                                return (
+                                    '<div class="lul-legend-row"><span class="lul-legend-swatch" style="background:' +
+                                    item[0] +
+                                    '"></span>' +
+                                    item[1] +
+                                    "</div>"
+                                );
+                            })
+                            .join("");
+                    return div;
+                };
+                legend.addTo(map);
+            })();
         </script>
     </body>
 </html>
