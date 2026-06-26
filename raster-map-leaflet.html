@@ -109,6 +109,29 @@
             .lul-legend::-webkit-scrollbar-thumb:hover {
                 background: rgba(57, 51, 72, 0.6);
             }
+            .lul-opacity {
+                background: #fff;
+                padding: 6px 10px;
+                border-radius: 4px;
+                border: 1px solid rgba(57, 51, 72, 0.12);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .lul-opacity-label {
+                font-size: 9.5px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.5);
+            }
+            .lul-opacity input[type="range"] {
+                width: 80px;
+                cursor: pointer;
+                accent-color: #393348;
+            }
             .lul-legend-title {
                 font-size: 11px;
                 font-weight: 700;
@@ -282,6 +305,7 @@
                 var countEl = document.getElementById("lul-raster-count");
                 var cache = {}; // key -> georaster
                 var currentLayer = null;
+                var currentOpacity = 0.75;
                 var didFit = false;
                 var reqToken = 0;
 
@@ -297,7 +321,7 @@
                         var lut = paletteFor(cfg);
                         currentLayer = new GeoRasterLayer({
                             georaster: georaster,
-                            opacity: 0.9,
+                            opacity: currentOpacity,
                             resolution: 128,
                             // categorical data: map each class value to its color;
                             // unknown / no-data values render transparent.
@@ -330,6 +354,23 @@
                             });
                     }
                 }
+
+                // Tiny opacity slider (top-right).
+                var opacityCtl = L.control({ position: "topright" });
+                opacityCtl.onAdd = function () {
+                    var div = L.DomUtil.create("div", "lul-opacity");
+                    div.innerHTML =
+                        '<span class="lul-opacity-label">Opacity</span>' +
+                        '<input type="range" min="0" max="1" step="0.05" value="' + currentOpacity + '" />';
+                    L.DomEvent.disableClickPropagation(div);
+                    L.DomEvent.disableScrollPropagation(div);
+                    div.querySelector("input").addEventListener("input", function () {
+                        currentOpacity = parseFloat(this.value);
+                        if (currentLayer) currentLayer.setOpacity(currentOpacity);
+                    });
+                    return div;
+                };
+                opacityCtl.addTo(map);
 
                 var tabs = document.querySelectorAll(".lul-tab");
                 tabs.forEach(function (tab) {
