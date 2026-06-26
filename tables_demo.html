@@ -1,0 +1,439 @@
+<style>
+    .lul-tables-demo {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    .lul-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+    .lul-tab {
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        padding: 9px 16px;
+        border: 1px solid rgba(57, 51, 72, 0.15);
+        background: #fff;
+        color: rgba(57, 51, 72, 0.5);
+        cursor: pointer;
+        border-radius: 4px;
+        transition:
+            background 0.15s ease,
+            color 0.15s ease,
+            border-color 0.15s ease;
+    }
+    .lul-tab:hover {
+        color: #393348;
+        border-color: rgba(57, 51, 72, 0.35);
+    }
+    .lul-tab.active {
+        background: #393348;
+        color: #fff;
+        border-color: #393348;
+    }
+    .lul-tab-panel {
+        display: none;
+    }
+    .lul-tab-panel.active {
+        display: block;
+    }
+
+    .lul-sample-preview {
+        background: #fff;
+        border-radius: 0;
+        overflow: hidden;
+        border: 1px solid rgba(57, 51, 72, 0.12);
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    .lul-sample-preview-header {
+        background: transparent;
+        color: rgba(57, 51, 72, 0.6);
+        padding: 0 0 15px 0;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .lul-sample-preview-header span {
+        font-size: 13px;
+        font-weight: 700;
+        color: rgba(57, 51, 72, 0.6);
+        letter-spacing: 0.12em;
+    }
+    .lul-sample-table-wrap {
+        overflow-x: auto;
+    }
+    .lul-sample-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    .lul-sample-table th {
+        background: #f5f4f0;
+        padding: 8px 12px;
+        text-align: left;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(57, 51, 72, 0.5);
+        border-bottom: 1px solid rgba(57, 51, 72, 0.1);
+        white-space: nowrap;
+    }
+    .lul-sample-table th.lul-tt-wrap {
+        line-height: 1.25;
+        padding: 6px 12px;
+    }
+    .lul-sample-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(57, 51, 72, 0.07);
+        color: #393348;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+    .lul-sample-table tr:last-child td {
+        border-bottom: none;
+    }
+    .lul-sample-table tr:nth-child(even) td {
+        background: rgba(57, 51, 72, 0.02);
+    }
+
+    .lul-tt-jur {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+    }
+    .lul-tt-name {
+        font-weight: 700;
+        font-size: 14px;
+        color: #393348;
+        line-height: 1.2;
+    }
+    .lul-tt-name.lul-tt-id {
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+    }
+    .lul-tt-sub {
+        font-size: 11px;
+        color: rgba(57, 51, 72, 0.5);
+        margin-top: 1px;
+    }
+
+    .lul-tt-num {
+        font-size: 12.5px;
+        color: #393348;
+    }
+
+    .lul-sample-preview-footer {
+        padding: 10px 18px;
+        border-top: 1px solid rgba(57, 51, 72, 0.08);
+        font-size: 11px;
+        color: rgba(57, 51, 72, 0.45);
+        background: #faf9f7;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+</style>
+
+<div class="lul-tables-demo">
+    <div class="lul-tabs">
+        <button class="lul-tab active" data-target="lul-panel-jurisdictions" type="button">Jurisdictions</button>
+        <button class="lul-tab" data-target="lul-panel-blockgroups" type="button">Block Groups</button>
+        <button class="lul-tab" data-target="lul-panel-censustracts" type="button">Census Tracts</button>
+    </div>
+
+    <!-- ── JURISDICTIONS ── -->
+    <div class="lul-tab-panel active" id="lul-panel-jurisdictions">
+        <div class="lul-sample-preview-header">
+            Zoning Tables Sample CSV
+            <span>3 Jurisdictions</span>
+        </div>
+        <div class="lul-sample-preview">
+            <div class="lul-sample-table-wrap">
+                <table class="lul-sample-table">
+                    <thead>
+                        <tr>
+                            <th>Jurisdiction</th>
+                            <th>Gov Type</th>
+                            <th>Population</th>
+                            <th>Total Acres</th>
+                            <th>Zonable Acres</th>
+                            <th class="lul-tt-wrap">Zoning Code<br />Pages</th>
+                            <th>Districts</th>
+                            <th>1-Fam Acres</th>
+                            <th>2-Fam Acres</th>
+                            <th>3-Fam Acres</th>
+                            <th>4-Fam Acres</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="lul-tt-jur">
+                                    <div class="lul-tt-name">Washington</div>
+                                    <div class="lul-tt-sub">District of Columbia</div>
+                                </div>
+                            </td>
+                            <td class="lul-tt-num">Municipal</td>
+                            <td class="lul-tt-num">702,250</td>
+                            <td class="lul-tt-num">39,473</td>
+                            <td class="lul-tt-num">31,598</td>
+                            <td class="lul-tt-num">1,242</td>
+                            <td class="lul-tt-num">167</td>
+                            <td class="lul-tt-num">17,534</td>
+                            <td class="lul-tt-num">8,722</td>
+                            <td class="lul-tt-num">8,724</td>
+                            <td class="lul-tt-num">8,716</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="lul-tt-jur">
+                                    <div class="lul-tt-name">Newport News</div>
+                                    <div class="lul-tt-sub">Virginia</div>
+                                </div>
+                            </td>
+                            <td class="lul-tt-num">Municipal</td>
+                            <td class="lul-tt-num">183,056</td>
+                            <td class="lul-tt-num">43,233</td>
+                            <td class="lul-tt-num">34,131</td>
+                            <td class="lul-tt-num">141</td>
+                            <td class="lul-tt-num">30</td>
+                            <td class="lul-tt-num">16,677</td>
+                            <td class="lul-tt-num">3,656</td>
+                            <td class="lul-tt-num">4,654</td>
+                            <td class="lul-tt-num">4,990</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="lul-tt-jur">
+                                    <div class="lul-tt-name">Surry County</div>
+                                    <div class="lul-tt-sub">Virginia</div>
+                                </div>
+                            </td>
+                            <td class="lul-tt-num">County</td>
+                            <td class="lul-tt-num">5,805</td>
+                            <td class="lul-tt-num">167,665</td>
+                            <td class="lul-tt-num">164,758</td>
+                            <td class="lul-tt-num">239</td>
+                            <td class="lul-tt-num">14</td>
+                            <td class="lul-tt-num">159,254</td>
+                            <td class="lul-tt-num">0</td>
+                            <td class="lul-tt-num">1,976</td>
+                            <td class="lul-tt-num">1,976</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="lul-sample-preview-footer">
+                <span>Showing 11 of 49 variables · acres of residential land allowed by-right</span>
+                <span>CSV</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── BLOCK GROUPS ── -->
+    <div class="lul-tab-panel" id="lul-panel-blockgroups">
+        <div class="lul-sample-preview-header">
+            Block Group Sample CSV
+            <span>3 Block Groups</span>
+        </div>
+        <div class="lul-sample-preview">
+            <div class="lul-sample-table-wrap">
+                <table class="lul-sample-table">
+                    <thead>
+                        <tr>
+                            <th>Block Group</th>
+                            <th>Population</th>
+                            <th>Housing Units</th>
+                            <th>Total Acres</th>
+                            <th>Zonable Acres</th>
+                            <th>Districts</th>
+                            <th>1-Fam Acres</th>
+                            <th>2-Fam Acres</th>
+                            <th>3-Fam Acres</th>
+                            <th>4-Fam Acres</th>
+                            <th class="lul-tt-wrap">Parking Req.<br />Acres</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="lul-tt-jur">
+                                    <div class="lul-tt-name lul-tt-id">330199759023</div>
+                                    <div class="lul-tt-sub">Sullivan County, NH</div>
+                                </div>
+                            </td>
+                            <td class="lul-tt-num">1,013</td>
+                            <td class="lul-tt-num">633</td>
+                            <td class="lul-tt-num">3,438</td>
+                            <td class="lul-tt-num">3,382</td>
+                            <td class="lul-tt-num">5</td>
+                            <td class="lul-tt-num">3,277</td>
+                            <td class="lul-tt-num">171</td>
+                            <td class="lul-tt-num">135</td>
+                            <td class="lul-tt-num">0</td>
+                            <td class="lul-tt-num">3,276</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="lul-tt-jur">
+                                    <div class="lul-tt-name lul-tt-id">330199759011</div>
+                                    <div class="lul-tt-sub">Sullivan County, NH</div>
+                                </div>
+                            </td>
+                            <td class="lul-tt-num">1,279</td>
+                            <td class="lul-tt-num">489</td>
+                            <td class="lul-tt-num">8,283</td>
+                            <td class="lul-tt-num">8,108</td>
+                            <td class="lul-tt-num">4</td>
+                            <td class="lul-tt-num">7,933</td>
+                            <td class="lul-tt-num">111</td>
+                            <td class="lul-tt-num">98</td>
+                            <td class="lul-tt-num">0</td>
+                            <td class="lul-tt-num">7,933</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="lul-tt-jur">
+                                    <div class="lul-tt-name lul-tt-id">330199758004</div>
+                                    <div class="lul-tt-sub">Sullivan County, NH</div>
+                                </div>
+                            </td>
+                            <td class="lul-tt-num">708</td>
+                            <td class="lul-tt-num">319</td>
+                            <td class="lul-tt-num">2,091</td>
+                            <td class="lul-tt-num">1,965</td>
+                            <td class="lul-tt-num">7</td>
+                            <td class="lul-tt-num">1,603</td>
+                            <td class="lul-tt-num">75</td>
+                            <td class="lul-tt-num">75</td>
+                            <td class="lul-tt-num">0</td>
+                            <td class="lul-tt-num">1,603</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="lul-sample-preview-footer">
+                <span>Showing 11 of 48 variables · acres of residential land allowed by-right</span>
+                <span>CSV</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── CENSUS TRACTS ── -->
+    <div class="lul-tab-panel" id="lul-panel-censustracts">
+        <div class="lul-sample-preview-header">
+            Census Tract Sample CSV
+            <span>3 Census Tracts</span>
+        </div>
+        <div class="lul-sample-preview">
+            <div class="lul-sample-table-wrap">
+                <table class="lul-sample-table">
+                    <thead>
+                        <tr>
+                            <th>Census Tract</th>
+                            <th>Population</th>
+                            <th>Housing Units</th>
+                            <th>Total Acres</th>
+                            <th>Zonable Acres</th>
+                            <th>Districts</th>
+                            <th>1-Fam Acres</th>
+                            <th>2-Fam Acres</th>
+                            <th>3-Fam Acres</th>
+                            <th>4-Fam Acres</th>
+                            <th class="lul-tt-wrap">Parking Req.<br />Acres</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="lul-tt-jur">
+                                    <div class="lul-tt-name lul-tt-id">33019975800</div>
+                                    <div class="lul-tt-sub">Sullivan County, NH</div>
+                                </div>
+                            </td>
+                            <td class="lul-tt-num">4,849</td>
+                            <td class="lul-tt-num">1,959</td>
+                            <td class="lul-tt-num">7,143</td>
+                            <td class="lul-tt-num">7,017</td>
+                            <td class="lul-tt-num">26</td>
+                            <td class="lul-tt-num">6,410</td>
+                            <td class="lul-tt-num">203</td>
+                            <td class="lul-tt-num">152</td>
+                            <td class="lul-tt-num">0</td>
+                            <td class="lul-tt-num">6,411</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="lul-tt-jur">
+                                    <div class="lul-tt-name lul-tt-id">33019975901</div>
+                                    <div class="lul-tt-sub">Sullivan County, NH</div>
+                                </div>
+                            </td>
+                            <td class="lul-tt-num">3,972</td>
+                            <td class="lul-tt-num">1,940</td>
+                            <td class="lul-tt-num">13,913</td>
+                            <td class="lul-tt-num">13,711</td>
+                            <td class="lul-tt-num">20</td>
+                            <td class="lul-tt-num">13,294</td>
+                            <td class="lul-tt-num">336</td>
+                            <td class="lul-tt-num">141</td>
+                            <td class="lul-tt-num">0</td>
+                            <td class="lul-tt-num">13,324</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="lul-tt-jur">
+                                    <div class="lul-tt-name lul-tt-id">33019975902</div>
+                                    <div class="lul-tt-sub">Sullivan County, NH</div>
+                                </div>
+                            </td>
+                            <td class="lul-tt-num">4,257</td>
+                            <td class="lul-tt-num">1,810</td>
+                            <td class="lul-tt-num">6,270</td>
+                            <td class="lul-tt-num">6,024</td>
+                            <td class="lul-tt-num">17</td>
+                            <td class="lul-tt-num">5,808</td>
+                            <td class="lul-tt-num">264</td>
+                            <td class="lul-tt-num">135</td>
+                            <td class="lul-tt-num">0</td>
+                            <td class="lul-tt-num">5,836</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="lul-sample-preview-footer">
+                <span>Showing 11 of 48 variables · acres of residential land allowed by-right</span>
+                <span>CSV</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var root = document.currentScript.previousElementSibling;
+        var tabs = root.querySelectorAll(".lul-tab");
+        var panels = root.querySelectorAll(".lul-tab-panel");
+        tabs.forEach(function (tab) {
+            tab.addEventListener("click", function () {
+                tabs.forEach(function (t) {
+                    t.classList.remove("active");
+                });
+                panels.forEach(function (p) {
+                    p.classList.remove("active");
+                });
+                tab.classList.add("active");
+                var panel = root.querySelector("#" + tab.getAttribute("data-target"));
+                if (panel) panel.classList.add("active");
+            });
+        });
+    })();
+</script>

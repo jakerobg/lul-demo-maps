@@ -16,12 +16,52 @@
     <body>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/proj4@2.11.0/dist/proj4.js"></script>
         <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
         <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
+        <script>
+            // Rasters are EPSG:5070 (NAD83 / Conus Albers). georaster-layer needs a
+            // proj4 definition to reproject them onto the web-mercator basemap.
+            proj4.defs(
+                "EPSG:5070",
+                "+proj=aea +lat_0=23 +lon_0=-96 +lat_1=29.5 +lat_2=45.5 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +type=crs",
+            );
+        </script>
 
         <style>
             .lul-map-section {
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            }
+            .lul-tabs {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 18px;
+                flex-wrap: wrap;
+            }
+            .lul-tab {
+                font-family: inherit;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                padding: 9px 16px;
+                border: 1px solid rgba(57, 51, 72, 0.15);
+                background: #fff;
+                color: rgba(57, 51, 72, 0.5);
+                cursor: pointer;
+                border-radius: 4px;
+                transition:
+                    background 0.15s ease,
+                    color 0.15s ease,
+                    border-color 0.15s ease;
+            }
+            .lul-tab:hover {
+                color: #393348;
+                border-color: rgba(57, 51, 72, 0.35);
+            }
+            .lul-tab.active {
+                background: #393348;
+                color: #fff;
+                border-color: #393348;
             }
             .lul-map-eyebrow {
                 font-size: 13px;
@@ -49,6 +89,25 @@
                 border-radius: 4px;
                 border: 1px solid rgba(57, 51, 72, 0.12);
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+                max-height: 420px;
+                overflow-y: scroll;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(57, 51, 72, 0.4) rgba(57, 51, 72, 0.08);
+            }
+            .lul-legend::-webkit-scrollbar {
+                width: 10px;
+                -webkit-appearance: none;
+            }
+            .lul-legend::-webkit-scrollbar-track {
+                background: rgba(57, 51, 72, 0.08);
+                border-radius: 5px;
+            }
+            .lul-legend::-webkit-scrollbar-thumb {
+                background: rgba(57, 51, 72, 0.4);
+                border-radius: 5px;
+            }
+            .lul-legend::-webkit-scrollbar-thumb:hover {
+                background: rgba(57, 51, 72, 0.6);
             }
             .lul-legend-title {
                 font-size: 11px;
@@ -80,20 +139,93 @@
         </style>
 
         <div class="lul-map-section">
+            <div class="lul-tabs">
+                <button class="lul-tab active" data-key="general" type="button">General</button>
+                <button class="lul-tab" data-key="residential" type="button">Residential</button>
+                <button class="lul-tab" data-key="nonresidential" type="button">Nonresidential</button>
+            </div>
             <div class="lul-map-eyebrow" style="display: flex; justify-content: space-between">
                 <span>Zoning Raster Sample: Clark County, NV</span>
-                <span>6 District Types</span>
+                <span id="lul-raster-count"></span>
             </div>
             <div id="lul-raster-map"></div>
             <p class="lul-map-caption">
-                Each pixel is colored by its zoning district type. Pan and zoom to explore the rasterized coverage.
+                Each pixel is colored by its zoning classification. Switch tabs to compare the general, residential,
+                and nonresidential breakdowns.
             </p>
         </div>
 
         <script>
-            var RASTER_LAYER;
-
             (function () {
+                // Single-band thematic rasters. Each pixel value maps to a color
+                // straight from the GeoTIFF's RAT (.aux.xml). No 4-band conversion
+                // needed — we color single-band values at render time below.
+                var RASTERS = {
+                    general: {
+                        file: "rasters/test_general_raster.tif",
+                        title: "Classification",
+                        classes: [
+                            [0, "protected", [227, 232, 218]],
+                            [1, "water", [147, 186, 196]],
+                            [2, "wetland", [177, 199, 192]],
+                            [3, "unzoned", [167, 172, 176]],
+                            [4, "residential", [186, 173, 203]],
+                            [5, "mixed", [129, 124, 164]],
+                            [6, "nonresidential", [231, 218, 208]],
+                        ],
+                    },
+                    residential: {
+                        file: "rasters/test_residential_raster.tif",
+                        title: "Classification",
+                        classes: [
+                            [0, "protected", [227, 232, 218]],
+                            [1, "water", [147, 186, 196]],
+                            [2, "wetland", [177, 199, 192]],
+                            [3, "unzoned", [167, 172, 176]],
+                            [4, "nonresidential", [214, 191, 165]],
+                            [5, "family1_residential", [140, 124, 164]],
+                            [6, "family2_residential", [101, 88, 128]],
+                            [8, "family4_residential", [43, 31, 74]],
+                            [9, "hearing_only_residential", [210, 194, 240]],
+                            [10, "family1_mixed", [184, 146, 164]],
+                            [13, "family4_mixed", [110, 32, 80]],
+                            [14, "hearing_only_mixed", [229, 210, 220]],
+                        ],
+                    },
+                    nonresidential: {
+                        file: "rasters/test_nonresidential_raster.tif",
+                        title: "Classification",
+                        classes: [
+                            [0, "protected", [211, 222, 199]],
+                            [1, "water", [166, 200, 200]],
+                            [2, "wetland", [177, 199, 192]],
+                            [3, "unzoned", [167, 172, 176]],
+                            [4, "residential", [186, 173, 203]],
+                            [5, "industrial", [224, 123, 84]],
+                            [6, "indcom", [193, 123, 61]],
+                            [8, "utility", [155, 155, 155]],
+                            [9, "transport", [240, 224, 160]],
+                            [10, "agindust", [181, 184, 79]],
+                            [11, "gov", [91, 141, 184]],
+                            [12, "general", [201, 168, 118]],
+                            [13, "retail", [242, 193, 78]],
+                            [14, "office", [74, 155, 142]],
+                            [15, "culture", [232, 160, 191]],
+                            [16, "commercial", [212, 132, 90]],
+                            [17, "tech", [126, 200, 200]],
+                            [18, "protected_mixed", [107, 122, 79]],
+                            [19, "industrial_mixed", [139, 61, 34]],
+                            [25, "gov_mixed", [44, 79, 114]],
+                            [26, "general_mixed", [138, 111, 61]],
+                            [27, "retail_mixed", [166, 124, 24]],
+                            [28, "office_mixed", [35, 92, 84]],
+                            [29, "culture_mixed", [160, 78, 116]],
+                            [30, "commercial_mixed", [138, 66, 40]],
+                            [31, "tech_mixed", [53, 122, 122]],
+                        ],
+                    },
+                };
+
                 var map = L.map("lul-raster-map", {
                     center: [36.17, -115.14],
                     zoom: 11,
@@ -109,56 +241,108 @@
                     maxZoom: 19,
                 }).addTo(map);
 
-                fetch("test6_cog.tif")
-                    .then(function (res) {
-                        if (!res.ok) throw new Error("HTTP " + res.status);
-                        return res.arrayBuffer();
-                    })
-                    .then(function (buf) {
-                        return parseGeoraster(buf);
-                    })
-                    .then(function (georaster) {
-                        RASTER_LAYER = new GeoRasterLayer({
-                            georaster: georaster,
-                            opacity: 0.9,
-                            resolution: 128, // samples per tile; lower = faster, higher = sharper
-                            resampleMethod: "bilinear", // smooths the blocky pixels when zoomed in
-                        });
-                        RASTER_LAYER.addTo(map);
-                        map.fitBounds(RASTER_LAYER.getBounds());
-                    })
-                    .catch(function (err) {
-                        console.error("Failed to load test6_cog.tif:", err);
+                // Build a value -> "rgb(...)" lookup from a raster's class list.
+                function paletteFor(cfg) {
+                    var lut = {};
+                    cfg.classes.forEach(function (c) {
+                        lut[c[0]] = "rgb(" + c[2][0] + "," + c[2][1] + "," + c[2][2] + ")";
                     });
+                    return lut;
+                }
 
-                // Legend — matches the baked-in colors from the raster
+                // Legend control, rebuilt each time the active raster changes.
                 var legend = L.control({ position: "bottomright" });
                 legend.onAdd = function () {
-                    var div = L.DomUtil.create("div", "lul-legend");
-                    var items = [
-                        ["#baadcb", "Residential"],
-                        ["#817ca4", "Residential + Nonresidential"],
-                        ["#e7dad0", "Nonresidential"],
-                        ["#d3dec7", "Protected"],
-                        ["#c8cace", "Unzoned + ROW"],
-                        ["#a6c8c8", "Water"],
-                    ];
-                    div.innerHTML =
-                        '<div class="lul-legend-title">Zoning District Type</div>' +
-                        items
-                            .map(function (item) {
+                    this._div = L.DomUtil.create("div", "lul-legend");
+                    return this._div;
+                };
+                legend.addTo(map);
+                function renderLegend(cfg) {
+                    legend._div.innerHTML =
+                        '<div class="lul-legend-title">' +
+                        cfg.title +
+                        "</div>" +
+                        cfg.classes
+                            .map(function (c) {
                                 return (
-                                    '<div class="lul-legend-row"><span class="lul-legend-swatch" style="background:' +
-                                    item[0] +
-                                    '"></span>' +
-                                    item[1] +
+                                    '<div class="lul-legend-row"><span class="lul-legend-swatch" style="background:rgb(' +
+                                    c[2][0] +
+                                    "," +
+                                    c[2][1] +
+                                    "," +
+                                    c[2][2] +
+                                    ')"></span>' +
+                                    c[1] +
                                     "</div>"
                                 );
                             })
                             .join("");
-                    return div;
-                };
-                legend.addTo(map);
+                }
+
+                var countEl = document.getElementById("lul-raster-count");
+                var cache = {}; // key -> georaster
+                var currentLayer = null;
+                var didFit = false;
+                var reqToken = 0;
+
+                function showRaster(key) {
+                    var cfg = RASTERS[key];
+                    var myToken = ++reqToken;
+                    renderLegend(cfg);
+                    countEl.textContent = cfg.classes.length + " classes";
+
+                    function addLayer(georaster) {
+                        if (myToken !== reqToken) return; // a newer tab was clicked
+                        if (currentLayer) map.removeLayer(currentLayer);
+                        var lut = paletteFor(cfg);
+                        currentLayer = new GeoRasterLayer({
+                            georaster: georaster,
+                            opacity: 0.9,
+                            resolution: 128,
+                            // categorical data: map each class value to its color;
+                            // unknown / no-data values render transparent.
+                            pixelValuesToColorFn: function (values) {
+                                return lut[values[0]] || null;
+                            },
+                        });
+                        currentLayer.addTo(map);
+                        if (!didFit) {
+                            map.fitBounds(currentLayer.getBounds());
+                            didFit = true;
+                        }
+                    }
+
+                    if (cache[key]) {
+                        addLayer(cache[key]);
+                    } else {
+                        fetch(cfg.file)
+                            .then(function (res) {
+                                if (!res.ok) throw new Error("HTTP " + res.status);
+                                return res.arrayBuffer();
+                            })
+                            .then(parseGeoraster)
+                            .then(function (georaster) {
+                                cache[key] = georaster;
+                                addLayer(georaster);
+                            })
+                            .catch(function (err) {
+                                console.error("Failed to load " + cfg.file + ":", err);
+                            });
+                    }
+                }
+
+                var tabs = document.querySelectorAll(".lul-tab");
+                tabs.forEach(function (tab) {
+                    tab.addEventListener("click", function () {
+                        tabs.forEach(function (t) {
+                            t.classList.remove("active");
+                        });
+                        tab.classList.add("active");
+                        showRaster(tab.getAttribute("data-key"));
+                    });
+                });
+
+                showRaster("general");
             })();
         </script>
     </body>

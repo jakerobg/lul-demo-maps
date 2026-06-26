@@ -1,0 +1,156 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <GDALRasterAttributeTable tableType="thematic">
+      <FieldDefn index="0">
+        <Name>Pixel Value</Name>
+        <Type>0</Type>
+        <Usage>5</Usage>
+      </FieldDefn>
+      <FieldDefn index="1">
+        <Name>classification</Name>
+        <Type>2</Type>
+        <Usage>2</Usage>
+      </FieldDefn>
+      <FieldDefn index="2">
+        <Name>Red</Name>
+        <Type>0</Type>
+        <Usage>6</Usage>
+      </FieldDefn>
+      <FieldDefn index="3">
+        <Name>Green</Name>
+        <Type>0</Type>
+        <Usage>7</Usage>
+      </FieldDefn>
+      <FieldDefn index="4">
+        <Name>Blue</Name>
+        <Type>0</Type>
+        <Usage>8</Usage>
+      </FieldDefn>
+      <FieldDefn index="5">
+        <Name>Opacity</Name>
+        <Type>0</Type>
+        <Usage>9</Usage>
+      </FieldDefn>
+      <Row index="0">
+        <F>0</F>
+        <F>protected</F>
+        <F>227</F>
+        <F>232</F>
+        <F>218</F>
+        <F>255</F>
+      </Row>
+      <Row index="1">
+        <F>1</F>
+        <F>water</F>
+        <F>147</F>
+        <F>186</F>
+        <F>196</F>
+        <F>255</F>
+      </Row>
+      <Row index="2">
+        <F>2</F>
+        <F>wetland</F>
+        <F>177</F>
+        <F>199</F>
+        <F>192</F>
+        <F>255</F>
+      </Row>
+      <Row index="3">
+        <F>3</F>
+        <F>unzoned</F>
+        <F>167</F>
+        <F>172</F>
+        <F>176</F>
+        <F>255</F>
+      </Row>
+      <Row index="4">
+        <F>4</F>
+        <F>nonresidential</F>
+        <F>214</F>
+        <F>191</F>
+        <F>165</F>
+        <F>255</F>
+      </Row>
+      <Row index="5">
+        <F>5</F>
+        <F>family1_residential</F>
+        <F>140</F>
+        <F>124</F>
+        <F>164</F>
+        <F>255</F>
+      </Row>
+      <Row index="6">
+        <F>6</F>
+        <F>family2_residential</F>
+        <F>101</F>
+        <F>88</F>
+        <F>128</F>
+        <F>255</F>
+      </Row>
+      <Row index="7">
+        <F>7</F>
+        <F></F>
+        <F>0</F>
+        <F>0</F>
+        <F>0</F>
+        <F>0</F>
+      </Row>
+      <Row index="8">
+        <F>8</F>
+        <F>family4_residential</F>
+        <F>43</F>
+        <F>31</F>
+        <F>74</F>
+        <F>255</F>
+      </Row>
+      <Row index="9">
+        <F>9</F>
+        <F>hearing_only_residential</F>
+        <F>210</F>
+        <F>194</F>
+        <F>240</F>
+        <F>255</F>
+      </Row>
+      <Row index="10">
+        <F>10</F>
+        <F>family1_mixed</F>
+        <F>184</F>
+        <F>146</F>
+        <F>164</F>
+        <F>255</F>
+      </Row>
+      <Row index="11">
+        <F>11</F>
+        <F></F>
+        <F>0</F>
+        <F>0</F>
+        <F>0</F>
+        <F>0</F>
+      </Row>
+      <Row index="12">
+        <F>12</F>
+        <F></F>
+        <F>0</F>
+        <F>0</F>
+        <F>0</F>
+        <F>0</F>
+      </Row>
+      <Row index="13">
+        <F>13</F>
+        <F>family4_mixed</F>
+        <F>110</F>
+        <F>32</F>
+        <F>80</F>
+        <F>255</F>
+      </Row>
+      <Row index="14">
+        <F>14</F>
+        <F>hearing_only_mixed</F>
+        <F>229</F>
+        <F>210</F>
+        <F>220</F>
+        <F>255</F>
+      </Row>
+    </GDALRasterAttributeTable>
+  </PAMRasterBand>
+</PAMDataset>
