@@ -40,6 +40,29 @@
                 color: rgba(57, 51, 72, 0.5);
                 margin-top: 10px;
             }
+            .lul-opacity {
+                background: #fff;
+                padding: 6px 10px;
+                border-radius: 4px;
+                border: 1px solid rgba(57, 51, 72, 0.12);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .lul-opacity-label {
+                font-size: 9.5px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.5);
+            }
+            .lul-opacity input[type="range"] {
+                width: 80px;
+                cursor: pointer;
+                accent-color: #393348;
+            }
             .leaflet-popup-content-wrapper {
                 border-radius: 4px !important;
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
@@ -103,6 +126,9 @@
             var DISTRICTS_DATA;
 
             (function () {
+                var geoLayer = null;
+                var currentOpacity = 0.6;
+
                 var map = L.map("lul-districts-map", {
                     center: [39.991, -105.1064],
                     zoom: 13,
@@ -117,6 +143,23 @@
                     subdomains: "abcd",
                     maxZoom: 19,
                 }).addTo(map);
+
+                // Tiny opacity slider (top-right).
+                var opacityCtl = L.control({ position: "topright" });
+                opacityCtl.onAdd = function () {
+                    var div = L.DomUtil.create("div", "lul-opacity");
+                    div.innerHTML =
+                        '<span class="lul-opacity-label">Opacity</span>' +
+                        '<input type="range" min="0" max="1" step="0.05" value="' + currentOpacity + '" />';
+                    L.DomEvent.disableClickPropagation(div);
+                    L.DomEvent.disableScrollPropagation(div);
+                    div.querySelector("input").addEventListener("input", function () {
+                        currentOpacity = parseFloat(this.value);
+                        if (geoLayer) geoLayer.setStyle({ fillOpacity: currentOpacity });
+                    });
+                    return div;
+                };
+                opacityCtl.addTo(map);
 
                 // Assign each unique district a distinct hue spread across the color wheel
                 // Uses golden angle stepping for maximum perceptual separation
@@ -176,11 +219,11 @@
                     })
                     .then(function (data) {
                         DISTRICTS_DATA = data;
-                        var layer = L.geoJSON(DISTRICTS_DATA, {
+                        geoLayer = L.geoJSON(DISTRICTS_DATA, {
                             style: function (feature) {
                                 return {
                                     fillColor: districtColor(feature.properties.name),
-                                    fillOpacity: 0.6,
+                                    fillOpacity: currentOpacity,
                                     color: "#fff",
                                     weight: 0.75,
                                 };
@@ -188,10 +231,10 @@
                             onEachFeature: function (feature, layer) {
                                 layer.bindPopup(popupHtml(feature.properties), { maxWidth: 260 });
                                 layer.on("mouseover", function () {
-                                    layer.setStyle({ fillOpacity: 0.9, weight: 1.25 });
+                                    layer.setStyle({ fillOpacity: Math.min(currentOpacity + 0.3, 1), weight: 1.25 });
                                 });
                                 layer.on("mouseout", function () {
-                                    layer.setStyle({ fillOpacity: 0.6, weight: 0.75 });
+                                    layer.setStyle({ fillOpacity: currentOpacity, weight: 0.75 });
                                 });
                             },
                         }).addTo(map);
