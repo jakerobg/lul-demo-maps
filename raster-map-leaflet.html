@@ -80,7 +80,7 @@
                 border-radius: 4px;
                 border: 1px solid rgba(57, 51, 72, 0.12);
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-                width: 190px;
+                width: 215px;
             }
             .lul-legend-body {
                 max-height: 168px;
@@ -152,14 +152,18 @@
             }
             .lul-legend-row {
                 display: flex;
-                align-items: center;
+                align-items: flex-start;
                 gap: 8px;
                 font-size: 12px;
+                line-height: 1.3;
                 color: #393348;
-                margin-bottom: 4px;
+                margin-bottom: 5px;
             }
             .lul-legend-row:last-child {
                 margin-bottom: 0;
+            }
+            .lul-legend-row span:last-child {
+                overflow-wrap: anywhere;
             }
             .lul-legend-swatch {
                 display: inline-block;
@@ -168,6 +172,7 @@
                 border-radius: 2px;
                 opacity: 0.85;
                 flex-shrink: 0;
+                margin-top: 1px;
             }
         </style>
 
@@ -192,68 +197,137 @@
                 // Single-band thematic rasters. Each pixel value maps to a color
                 // straight from the GeoTIFF's RAT (.aux.xml). No 4-band conversion
                 // needed — we color single-band values at render time below.
+                //
+                // Legend display names per raster come from the *_names.csv files
+                // (variable -> label). Each raster has its own map because the same
+                // variable can mean different things across rasters.
+                var NAMES_GENERAL = {
+                    protected: "Protected",
+                    water: "Water",
+                    wetland: "Wetland",
+                    unzoned: "Unzoned",
+                    residential: "Primarily Residential",
+                    mixed: "Residential + Nonresidential",
+                    nonresidential: "Nonresidential",
+                };
+                var NAMES_RESIDENTIAL = {
+                    protected: "Protected",
+                    water: "Water",
+                    wetland: "Wetland",
+                    nonresidential: "Nonresidential",
+                    unzoned: "Unzoned",
+                    family1_residential: "Only 1-Family Residential By Right",
+                    family2_residential: "Up to 2-Family Residential By Right",
+                    family3_residential: "Up to 3-Family Residential By Right",
+                    family4_residential: "4-or-More-Family Residential By Right",
+                    hearing_only_residential: "All Residential Uses Require a Public Hearing",
+                    family1_mixed: "Only 1-Family Residential Allowed By Right + Nonresidential",
+                    family2_mixed: "Up to 2-Family Residential By Right + Nonresidential",
+                    family3_mixed: "Up to 3-Family Residential By Right + Nonresidential",
+                    family4_mixed: "4-or-More-Family Residential By Right + Nonresidential",
+                    hearing_only_mixed: "All Residential Uses Require a Public Hearing + Nonresidential",
+                };
+                var NAMES_NONRES = {
+                    protected: "Protected",
+                    water: "Water",
+                    wetland: "Wetland",
+                    unzoned: "Unzoned",
+                    residential: "Primarily Residential",
+                    industrial: "Industrial (industrial)",
+                    indcom: "Mixed – Industrial-Commercial Uses",
+                    mining: "Mining/Extractive",
+                    utility: "Utilities",
+                    transport: "Transportation",
+                    agindust: "Agricultural-Industrial",
+                    gov: "Institutional/Government",
+                    general: "Mixed – Any/All Nonresidential",
+                    retail: "Retail/Service",
+                    office: "Office",
+                    culture: "Cultural/Entertainment/Tourist",
+                    commercial: "Mixed – Specified Commercial Uses",
+                    tech: "Research/Tech",
+                    protected_mixed: "Open Space/Light Recreation + Residential",
+                    industrial_mixed: "Industrial + Residential",
+                    indcom_mixed: "Industrial-Commercial Uses + Residential",
+                    mining_mixed: "Mining/Extractive + Residential",
+                    utility_mixed: "Utilities + Residential",
+                    transport_mixed: "Transportation + Residential",
+                    agindust_mixed: "Agricultural-Industrial + Residential",
+                    gov_mixed: "Institutional/Government + Residential",
+                    general_mixed: "Any/All Nonresidential Uses + Residential",
+                    retail_mixed: "Retail/Service + Residential",
+                    office_mixed: "Office + Residential",
+                    culture_mixed: "Cultural/Entertainment/Tourist + Residential",
+                    commercial_mixed: "Specified Commercial Uses + Residential",
+                    tech_mixed: "Research/Tech + Residential",
+                };
+
+                // classes: [pixel value, RAT variable name, [r, g, b]]
                 var RASTERS = {
                     general: {
                         file: "rasters/test_general_3857.tif",
                         title: "Classification",
+                        names: NAMES_GENERAL,
                         classes: [
-                            [0, "Protected", [227, 232, 218]],
-                            [1, "Water", [147, 186, 196]],
-                            [2, "Wetland", [177, 199, 192]],
-                            [3, "Unzoned", [167, 172, 176]],
-                            [4, "Residential", [186, 173, 203]],
-                            [5, "Mixed", [129, 124, 164]],
-                            [6, "Nonresidential", [231, 218, 208]],
+                            [0, "protected", [227, 232, 218]],
+                            [1, "water", [147, 186, 196]],
+                            [2, "wetland", [177, 199, 192]],
+                            [3, "unzoned", [167, 172, 176]],
+                            [4, "residential", [186, 173, 203]],
+                            [5, "mixed", [129, 124, 164]],
+                            [6, "nonresidential", [231, 218, 208]],
                         ],
                     },
                     residential: {
                         file: "rasters/test_residential_3857.tif",
                         title: "Classification",
+                        names: NAMES_RESIDENTIAL,
                         classes: [
-                            [0, "Protected", [227, 232, 218]],
-                            [1, "Water", [147, 186, 196]],
-                            [2, "Wetland", [177, 199, 192]],
-                            [3, "Unzoned", [167, 172, 176]],
-                            [4, "Nonresidential", [214, 191, 165]],
-                            [5, "1-Family Residential", [140, 124, 164]],
-                            [6, "2-Family Residential", [101, 88, 128]],
-                            [8, "4-Family Residential", [43, 31, 74]],
-                            [9, "Hearing-Only Residential", [210, 194, 240]],
-                            [10, "1-Family Mixed", [184, 146, 164]],
-                            [13, "4-Family Mixed", [110, 32, 80]],
-                            [14, "Hearing-Only Mixed", [229, 210, 220]],
+                            [0, "protected", [227, 232, 218]],
+                            [1, "water", [147, 186, 196]],
+                            [2, "wetland", [177, 199, 192]],
+                            [3, "unzoned", [167, 172, 176]],
+                            [4, "nonresidential", [214, 191, 165]],
+                            [5, "family1_residential", [140, 124, 164]],
+                            [6, "family2_residential", [101, 88, 128]],
+                            [8, "family4_residential", [43, 31, 74]],
+                            [9, "hearing_only_residential", [210, 194, 240]],
+                            [10, "family1_mixed", [184, 146, 164]],
+                            [13, "family4_mixed", [110, 32, 80]],
+                            [14, "hearing_only_mixed", [229, 210, 220]],
                         ],
                     },
                     nonresidential: {
                         file: "rasters/test_nonresidential_3857.tif",
                         title: "Classification",
+                        names: NAMES_NONRES,
                         classes: [
-                            [0, "Protected", [211, 222, 199]],
-                            [1, "Water", [166, 200, 200]],
-                            [2, "Wetland", [177, 199, 192]],
-                            [3, "Unzoned", [167, 172, 176]],
-                            [4, "Residential", [186, 173, 203]],
-                            [5, "Industrial", [224, 123, 84]],
-                            [6, "Industrial/Commercial", [193, 123, 61]],
-                            [8, "Utility", [155, 155, 155]],
-                            [9, "Transportation", [240, 224, 160]],
-                            [10, "Agricultural-Industrial", [181, 184, 79]],
-                            [11, "Government", [91, 141, 184]],
-                            [12, "General Commercial", [201, 168, 118]],
-                            [13, "Retail", [242, 193, 78]],
-                            [14, "Office", [74, 155, 142]],
-                            [15, "Cultural", [232, 160, 191]],
-                            [16, "Commercial", [212, 132, 90]],
-                            [17, "Technology", [126, 200, 200]],
-                            [18, "Protected Mixed", [107, 122, 79]],
-                            [19, "Industrial Mixed", [139, 61, 34]],
-                            [25, "Government Mixed", [44, 79, 114]],
-                            [26, "General Commercial Mixed", [138, 111, 61]],
-                            [27, "Retail Mixed", [166, 124, 24]],
-                            [28, "Office Mixed", [35, 92, 84]],
-                            [29, "Cultural Mixed", [160, 78, 116]],
-                            [30, "Commercial Mixed", [138, 66, 40]],
-                            [31, "Technology Mixed", [53, 122, 122]],
+                            [0, "protected", [211, 222, 199]],
+                            [1, "water", [166, 200, 200]],
+                            [2, "wetland", [177, 199, 192]],
+                            [3, "unzoned", [167, 172, 176]],
+                            [4, "residential", [186, 173, 203]],
+                            [5, "industrial", [224, 123, 84]],
+                            [6, "indcom", [193, 123, 61]],
+                            [8, "utility", [155, 155, 155]],
+                            [9, "transport", [240, 224, 160]],
+                            [10, "agindust", [181, 184, 79]],
+                            [11, "gov", [91, 141, 184]],
+                            [12, "general", [201, 168, 118]],
+                            [13, "retail", [242, 193, 78]],
+                            [14, "office", [74, 155, 142]],
+                            [15, "culture", [232, 160, 191]],
+                            [16, "commercial", [212, 132, 90]],
+                            [17, "tech", [126, 200, 200]],
+                            [18, "protected_mixed", [107, 122, 79]],
+                            [19, "industrial_mixed", [139, 61, 34]],
+                            [25, "gov_mixed", [44, 79, 114]],
+                            [26, "general_mixed", [138, 111, 61]],
+                            [27, "retail_mixed", [166, 124, 24]],
+                            [28, "office_mixed", [35, 92, 84]],
+                            [29, "culture_mixed", [160, 78, 116]],
+                            [30, "commercial_mixed", [138, 66, 40]],
+                            [31, "tech_mixed", [53, 122, 122]],
                         ],
                     },
                 };
@@ -310,8 +384,9 @@
                                     "," +
                                     c[2][2] +
                                     ')"></span>' +
-                                    c[1] +
-                                    "</div>"
+                                    "<span>" +
+                                    ((cfg.names && cfg.names[c[1]]) || c[1]) +
+                                    "</span></div>"
                                 );
                             })
                             .join("") +
