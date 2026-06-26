@@ -16,17 +16,8 @@
     <body>
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <script src="https://unpkg.com/proj4@2.11.0/dist/proj4.js"></script>
         <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
         <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
-        <script>
-            // Rasters are EPSG:5070 (NAD83 / Conus Albers). georaster-layer needs a
-            // proj4 definition to reproject them onto the web-mercator basemap.
-            proj4.defs(
-                "EPSG:5070",
-                "+proj=aea +lat_0=23 +lon_0=-96 +lat_1=29.5 +lat_2=45.5 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +type=crs",
-            );
-        </script>
 
         <style>
             .lul-map-section {
@@ -84,29 +75,36 @@
             }
             .lul-legend {
                 background: #fff;
-                padding: 12px 14px;
+                padding: 10px 12px;
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
                 border-radius: 4px;
                 border: 1px solid rgba(57, 51, 72, 0.12);
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-                max-height: 420px;
+                width: 190px;
+            }
+            .lul-legend-body {
+                max-height: 168px;
                 overflow-y: scroll;
+                margin-top: 8px;
                 scrollbar-width: thin;
                 scrollbar-color: rgba(57, 51, 72, 0.4) rgba(57, 51, 72, 0.08);
             }
-            .lul-legend::-webkit-scrollbar {
-                width: 10px;
+            .lul-legend.collapsed .lul-legend-body {
+                display: none;
+            }
+            .lul-legend-body::-webkit-scrollbar {
+                width: 8px;
                 -webkit-appearance: none;
             }
-            .lul-legend::-webkit-scrollbar-track {
+            .lul-legend-body::-webkit-scrollbar-track {
                 background: rgba(57, 51, 72, 0.08);
-                border-radius: 5px;
+                border-radius: 4px;
             }
-            .lul-legend::-webkit-scrollbar-thumb {
+            .lul-legend-body::-webkit-scrollbar-thumb {
                 background: rgba(57, 51, 72, 0.4);
-                border-radius: 5px;
+                border-radius: 4px;
             }
-            .lul-legend::-webkit-scrollbar-thumb:hover {
+            .lul-legend-body::-webkit-scrollbar-thumb:hover {
                 background: rgba(57, 51, 72, 0.6);
             }
             .lul-opacity {
@@ -138,7 +136,19 @@
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
                 color: rgba(57, 51, 72, 0.5);
-                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                cursor: pointer;
+                user-select: none;
+            }
+            .lul-legend-caret {
+                font-size: 9px;
+                transition: transform 0.15s ease;
+            }
+            .lul-legend.collapsed .lul-legend-caret {
+                transform: rotate(-90deg);
             }
             .lul-legend-row {
                 display: flex;
@@ -169,7 +179,6 @@
             </div>
             <div class="lul-map-eyebrow" style="display: flex; justify-content: space-between">
                 <span>Zoning Raster Sample: Clark County, NV</span>
-                <span id="lul-raster-count"></span>
             </div>
             <div id="lul-raster-map"></div>
             <p class="lul-map-caption">
@@ -185,66 +194,66 @@
                 // needed — we color single-band values at render time below.
                 var RASTERS = {
                     general: {
-                        file: "rasters/test_general_raster.tif",
+                        file: "rasters/test_general_3857.tif",
                         title: "Classification",
                         classes: [
-                            [0, "protected", [227, 232, 218]],
-                            [1, "water", [147, 186, 196]],
-                            [2, "wetland", [177, 199, 192]],
-                            [3, "unzoned", [167, 172, 176]],
-                            [4, "residential", [186, 173, 203]],
-                            [5, "mixed", [129, 124, 164]],
-                            [6, "nonresidential", [231, 218, 208]],
+                            [0, "Protected", [227, 232, 218]],
+                            [1, "Water", [147, 186, 196]],
+                            [2, "Wetland", [177, 199, 192]],
+                            [3, "Unzoned", [167, 172, 176]],
+                            [4, "Residential", [186, 173, 203]],
+                            [5, "Mixed", [129, 124, 164]],
+                            [6, "Nonresidential", [231, 218, 208]],
                         ],
                     },
                     residential: {
-                        file: "rasters/test_residential_raster.tif",
+                        file: "rasters/test_residential_3857.tif",
                         title: "Classification",
                         classes: [
-                            [0, "protected", [227, 232, 218]],
-                            [1, "water", [147, 186, 196]],
-                            [2, "wetland", [177, 199, 192]],
-                            [3, "unzoned", [167, 172, 176]],
-                            [4, "nonresidential", [214, 191, 165]],
-                            [5, "family1_residential", [140, 124, 164]],
-                            [6, "family2_residential", [101, 88, 128]],
-                            [8, "family4_residential", [43, 31, 74]],
-                            [9, "hearing_only_residential", [210, 194, 240]],
-                            [10, "family1_mixed", [184, 146, 164]],
-                            [13, "family4_mixed", [110, 32, 80]],
-                            [14, "hearing_only_mixed", [229, 210, 220]],
+                            [0, "Protected", [227, 232, 218]],
+                            [1, "Water", [147, 186, 196]],
+                            [2, "Wetland", [177, 199, 192]],
+                            [3, "Unzoned", [167, 172, 176]],
+                            [4, "Nonresidential", [214, 191, 165]],
+                            [5, "1-Family Residential", [140, 124, 164]],
+                            [6, "2-Family Residential", [101, 88, 128]],
+                            [8, "4-Family Residential", [43, 31, 74]],
+                            [9, "Hearing-Only Residential", [210, 194, 240]],
+                            [10, "1-Family Mixed", [184, 146, 164]],
+                            [13, "4-Family Mixed", [110, 32, 80]],
+                            [14, "Hearing-Only Mixed", [229, 210, 220]],
                         ],
                     },
                     nonresidential: {
-                        file: "rasters/test_nonresidential_raster.tif",
+                        file: "rasters/test_nonresidential_3857.tif",
                         title: "Classification",
                         classes: [
-                            [0, "protected", [211, 222, 199]],
-                            [1, "water", [166, 200, 200]],
-                            [2, "wetland", [177, 199, 192]],
-                            [3, "unzoned", [167, 172, 176]],
-                            [4, "residential", [186, 173, 203]],
-                            [5, "industrial", [224, 123, 84]],
-                            [6, "indcom", [193, 123, 61]],
-                            [8, "utility", [155, 155, 155]],
-                            [9, "transport", [240, 224, 160]],
-                            [10, "agindust", [181, 184, 79]],
-                            [11, "gov", [91, 141, 184]],
-                            [12, "general", [201, 168, 118]],
-                            [13, "retail", [242, 193, 78]],
-                            [14, "office", [74, 155, 142]],
-                            [15, "culture", [232, 160, 191]],
-                            [16, "commercial", [212, 132, 90]],
-                            [17, "tech", [126, 200, 200]],
-                            [18, "protected_mixed", [107, 122, 79]],
-                            [19, "industrial_mixed", [139, 61, 34]],
-                            [25, "gov_mixed", [44, 79, 114]],
-                            [26, "general_mixed", [138, 111, 61]],
-                            [27, "retail_mixed", [166, 124, 24]],
-                            [28, "office_mixed", [35, 92, 84]],
-                            [29, "culture_mixed", [160, 78, 116]],
-                            [30, "commercial_mixed", [138, 66, 40]],
-                            [31, "tech_mixed", [53, 122, 122]],
+                            [0, "Protected", [211, 222, 199]],
+                            [1, "Water", [166, 200, 200]],
+                            [2, "Wetland", [177, 199, 192]],
+                            [3, "Unzoned", [167, 172, 176]],
+                            [4, "Residential", [186, 173, 203]],
+                            [5, "Industrial", [224, 123, 84]],
+                            [6, "Industrial/Commercial", [193, 123, 61]],
+                            [8, "Utility", [155, 155, 155]],
+                            [9, "Transportation", [240, 224, 160]],
+                            [10, "Agricultural-Industrial", [181, 184, 79]],
+                            [11, "Government", [91, 141, 184]],
+                            [12, "General Commercial", [201, 168, 118]],
+                            [13, "Retail", [242, 193, 78]],
+                            [14, "Office", [74, 155, 142]],
+                            [15, "Cultural", [232, 160, 191]],
+                            [16, "Commercial", [212, 132, 90]],
+                            [17, "Technology", [126, 200, 200]],
+                            [18, "Protected Mixed", [107, 122, 79]],
+                            [19, "Industrial Mixed", [139, 61, 34]],
+                            [25, "Government Mixed", [44, 79, 114]],
+                            [26, "General Commercial Mixed", [138, 111, 61]],
+                            [27, "Retail Mixed", [166, 124, 24]],
+                            [28, "Office Mixed", [35, 92, 84]],
+                            [29, "Cultural Mixed", [160, 78, 116]],
+                            [30, "Commercial Mixed", [138, 66, 40]],
+                            [31, "Technology Mixed", [53, 122, 122]],
                         ],
                     },
                 };
@@ -277,14 +286,20 @@
                 var legend = L.control({ position: "bottomright" });
                 legend.onAdd = function () {
                     this._div = L.DomUtil.create("div", "lul-legend");
+                    L.DomEvent.disableClickPropagation(this._div);
+                    L.DomEvent.disableScrollPropagation(this._div);
                     return this._div;
                 };
                 legend.addTo(map);
                 function renderLegend(cfg) {
                     legend._div.innerHTML =
                         '<div class="lul-legend-title">' +
+                        "<span>" +
                         cfg.title +
+                        "</span>" +
+                        '<span class="lul-legend-caret">▼</span>' +
                         "</div>" +
+                        '<div class="lul-legend-body">' +
                         cfg.classes
                             .map(function (c) {
                                 return (
@@ -299,10 +314,13 @@
                                     "</div>"
                                 );
                             })
-                            .join("");
+                            .join("") +
+                        "</div>";
+                    legend._div.querySelector(".lul-legend-title").addEventListener("click", function () {
+                        legend._div.classList.toggle("collapsed");
+                    });
                 }
 
-                var countEl = document.getElementById("lul-raster-count");
                 var cache = {}; // key -> georaster
                 var currentLayer = null;
                 var currentOpacity = 0.75;
@@ -313,7 +331,6 @@
                     var cfg = RASTERS[key];
                     var myToken = ++reqToken;
                     renderLegend(cfg);
-                    countEl.textContent = cfg.classes.length + " classes";
 
                     function addLayer(georaster) {
                         if (myToken !== reqToken) return; // a newer tab was clicked
