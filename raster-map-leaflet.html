@@ -221,7 +221,7 @@
                     family3_residential: "Up to 3-Family Residential By Right",
                     family4_residential: "4-or-More-Family Residential By Right",
                     hearing_only_residential: "All Residential Uses Require a Public Hearing",
-                    family1_mixed: "Only 1-Family Residential Allowed By Right + Nonresidential",
+                    family1_mixed: "Only 1-Family Residential By Right + Nonresidential",
                     family2_mixed: "Up to 2-Family Residential By Right + Nonresidential",
                     family3_mixed: "Up to 3-Family Residential By Right + Nonresidential",
                     family4_mixed: "4-or-More-Family Residential By Right + Nonresidential",
@@ -453,7 +453,9 @@
                     var div = L.DomUtil.create("div", "lul-opacity");
                     div.innerHTML =
                         '<span class="lul-opacity-label">Opacity</span>' +
-                        '<input type="range" min="0" max="1" step="0.05" value="' + currentOpacity + '" />';
+                        '<input type="range" min="0" max="1" step="0.05" value="' +
+                        currentOpacity +
+                        '" />';
                     L.DomEvent.disableClickPropagation(div);
                     L.DomEvent.disableScrollPropagation(div);
                     div.querySelector("input").addEventListener("input", function () {
