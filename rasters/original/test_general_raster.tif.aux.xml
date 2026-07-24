@@ -1,6 +1,5 @@
 <PAMDataset>
   <PAMRasterBand band="1">
-    <Description>classification</Description>
     <GDALRasterAttributeTable tableType="thematic">
       <FieldDefn index="0">
         <Name>Pixel Value</Name>
@@ -66,90 +65,26 @@
       </Row>
       <Row index="4">
         <F>4</F>
-        <F>nonresidential</F>
-        <F>214</F>
-        <F>191</F>
-        <F>165</F>
+        <F>residential</F>
+        <F>186</F>
+        <F>173</F>
+        <F>203</F>
         <F>255</F>
       </Row>
       <Row index="5">
         <F>5</F>
-        <F>family1_residential</F>
-        <F>140</F>
+        <F>mixed</F>
+        <F>129</F>
         <F>124</F>
         <F>164</F>
         <F>255</F>
       </Row>
       <Row index="6">
         <F>6</F>
-        <F>family2_residential</F>
-        <F>101</F>
-        <F>88</F>
-        <F>128</F>
-        <F>255</F>
-      </Row>
-      <Row index="7">
-        <F>7</F>
-        <F></F>
-        <F>0</F>
-        <F>0</F>
-        <F>0</F>
-        <F>0</F>
-      </Row>
-      <Row index="8">
-        <F>8</F>
-        <F>family4_residential</F>
-        <F>43</F>
-        <F>31</F>
-        <F>74</F>
-        <F>255</F>
-      </Row>
-      <Row index="9">
-        <F>9</F>
-        <F>hearing_only_residential</F>
-        <F>210</F>
-        <F>194</F>
-        <F>240</F>
-        <F>255</F>
-      </Row>
-      <Row index="10">
-        <F>10</F>
-        <F>family1_mixed</F>
-        <F>184</F>
-        <F>146</F>
-        <F>164</F>
-        <F>255</F>
-      </Row>
-      <Row index="11">
-        <F>11</F>
-        <F></F>
-        <F>0</F>
-        <F>0</F>
-        <F>0</F>
-        <F>0</F>
-      </Row>
-      <Row index="12">
-        <F>12</F>
-        <F></F>
-        <F>0</F>
-        <F>0</F>
-        <F>0</F>
-        <F>0</F>
-      </Row>
-      <Row index="13">
-        <F>13</F>
-        <F>family4_mixed</F>
-        <F>110</F>
-        <F>32</F>
-        <F>80</F>
-        <F>255</F>
-      </Row>
-      <Row index="14">
-        <F>14</F>
-        <F>hearing_only_mixed</F>
-        <F>229</F>
-        <F>210</F>
-        <F>220</F>
+        <F>nonresidential</F>
+        <F>231</F>
+        <F>218</F>
+        <F>208</F>
         <F>255</F>
       </Row>
     </GDALRasterAttributeTable>

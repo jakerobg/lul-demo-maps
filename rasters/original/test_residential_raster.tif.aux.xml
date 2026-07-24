@@ -1,6 +1,5 @@
 <PAMDataset>
   <PAMRasterBand band="1">
-    <Description>classification</Description>
     <GDALRasterAttributeTable tableType="thematic">
       <FieldDefn index="0">
         <Name>Pixel Value</Name>

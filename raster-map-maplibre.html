@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Zoning Raster Sample Map - Clark County, NV</title>
+        <title>Zoning Raster Sample Map (MapLibre) - Clark County, NV</title>
         <style>
             html,
             body {
@@ -14,10 +14,9 @@
         </style>
     </head>
     <body>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+        <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
         <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
-        <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
 
         <style>
             .lul-map-section {
@@ -40,10 +39,6 @@
                 color: rgba(57, 51, 72, 0.5);
                 cursor: pointer;
                 border-radius: 4px;
-                transition:
-                    background 0.15s ease,
-                    color 0.15s ease,
-                    border-color 0.15s ease;
             }
             .lul-tab:hover {
                 color: #393348;
@@ -61,12 +56,41 @@
                 text-transform: uppercase;
                 color: rgba(57, 51, 72, 0.6);
                 margin-bottom: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+            }
+            .lul-resample {
+                display: flex;
+                gap: 4px;
+                text-transform: none;
+                letter-spacing: normal;
+            }
+            .lul-resample button {
+                font-family: inherit;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                padding: 6px 10px;
+                border: 1px solid rgba(57, 51, 72, 0.15);
+                background: #fff;
+                color: rgba(57, 51, 72, 0.5);
+                cursor: pointer;
+                border-radius: 4px;
+            }
+            .lul-resample button.active {
+                background: #393348;
+                color: #fff;
+                border-color: #393348;
             }
             #lul-raster-map {
                 width: 100%;
                 height: 580px;
                 border-radius: 4px;
                 border: 1px solid rgba(57, 51, 72, 0.15);
+                position: relative;
             }
             .lul-map-caption {
                 font-size: 12px;
@@ -74,6 +98,10 @@
                 margin-top: 10px;
             }
             .lul-legend {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                z-index: 2;
                 background: #fff;
                 padding: 10px 12px;
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -84,30 +112,55 @@
             }
             .lul-legend-body {
                 max-height: 168px;
-                overflow-y: scroll;
+                overflow-y: auto;
                 margin-top: 8px;
                 scrollbar-width: thin;
-                scrollbar-color: rgba(57, 51, 72, 0.4) rgba(57, 51, 72, 0.08);
             }
             .lul-legend.collapsed .lul-legend-body {
                 display: none;
             }
-            .lul-legend-body::-webkit-scrollbar {
-                width: 8px;
-                -webkit-appearance: none;
+            .lul-legend-title {
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                cursor: pointer;
+                user-select: none;
             }
-            .lul-legend-body::-webkit-scrollbar-track {
-                background: rgba(57, 51, 72, 0.08);
-                border-radius: 4px;
+            .lul-legend-caret {
+                font-size: 9px;
             }
-            .lul-legend-body::-webkit-scrollbar-thumb {
-                background: rgba(57, 51, 72, 0.4);
-                border-radius: 4px;
+            .lul-legend.collapsed .lul-legend-caret {
+                transform: rotate(-90deg);
             }
-            .lul-legend-body::-webkit-scrollbar-thumb:hover {
-                background: rgba(57, 51, 72, 0.6);
+            .lul-legend-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+                font-size: 12px;
+                line-height: 1.3;
+                color: #393348;
+                margin-bottom: 5px;
+            }
+            .lul-legend-swatch {
+                display: inline-block;
+                width: 14px;
+                height: 14px;
+                border-radius: 2px;
+                opacity: 0.85;
+                flex-shrink: 0;
+                margin-top: 1px;
             }
             .lul-opacity {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                z-index: 2;
                 background: #fff;
                 padding: 6px 10px;
                 border-radius: 4px;
@@ -130,49 +183,23 @@
                 cursor: pointer;
                 accent-color: #393348;
             }
-            .lul-legend-title {
-                font-size: 11px;
+            .lul-loading {
+                position: absolute;
+                inset: 0;
+                z-index: 3;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.6);
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 12px;
                 font-weight: 700;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
-                color: rgba(57, 51, 72, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 8px;
-                cursor: pointer;
-                user-select: none;
+                color: rgba(57, 51, 72, 0.6);
             }
-            .lul-legend-caret {
-                font-size: 9px;
-                transition: transform 0.15s ease;
-            }
-            .lul-legend.collapsed .lul-legend-caret {
-                transform: rotate(-90deg);
-            }
-            .lul-legend-row {
-                display: flex;
-                align-items: flex-start;
-                gap: 8px;
-                font-size: 12px;
-                line-height: 1.3;
-                color: #393348;
-                margin-bottom: 5px;
-            }
-            .lul-legend-row:last-child {
-                margin-bottom: 0;
-            }
-            .lul-legend-row span:last-child {
-                overflow-wrap: anywhere;
-            }
-            .lul-legend-swatch {
-                display: inline-block;
-                width: 14px;
-                height: 14px;
-                border-radius: 2px;
-                opacity: 0.85;
-                flex-shrink: 0;
-                margin-top: 1px;
+            .lul-loading.hidden {
+                display: none;
             }
         </style>
 
@@ -182,25 +209,29 @@
                 <button class="lul-tab" data-key="residential" type="button">Residential</button>
                 <button class="lul-tab" data-key="nonresidential" type="button">Nonresidential</button>
             </div>
-            <div class="lul-map-eyebrow" style="display: flex; justify-content: space-between">
-                <span>Zoning Raster Sample: Clark County, NV</span>
+            <div class="lul-map-eyebrow">
+                <span>Zoning Raster Sample: Clark County, NV — MapLibre GL</span>
+                <span class="lul-resample">
+                    <button data-mode="nearest" class="active" type="button">Nearest</button>
+                    <button data-mode="linear" type="button">Linear</button>
+                </span>
             </div>
-            <div id="lul-raster-map"></div>
+            <div id="lul-raster-map">
+                <div class="lul-loading" id="lul-loading">Rendering raster…</div>
+                <div class="lul-opacity">
+                    <span class="lul-opacity-label">Opacity</span>
+                    <input type="range" min="0" max="1" step="0.05" value="0.75" id="lul-opacity-input" />
+                </div>
+                <div class="lul-legend" id="lul-legend"></div>
+            </div>
             <p class="lul-map-caption">
-                Each pixel is colored by its zoning classification. Switch tabs to compare the general, residential, and
-                nonresidential breakdowns.
+                Same rasters as the Leaflet demo, rendered by MapLibre GL as a GPU texture. Toggle Nearest vs Linear to
+                compare pixel resampling; nearest keeps crisp categorical edges, linear blends them.
             </p>
         </div>
 
         <script>
             (function () {
-                // Single-band thematic rasters. Each pixel value maps to a color
-                // straight from the GeoTIFF's RAT (.aux.xml). No 4-band conversion
-                // needed — we color single-band values at render time below.
-                //
-                // Legend display names per raster come from the *_names.csv files
-                // (variable -> label). Each raster has its own map because the same
-                // variable can mean different things across rasters.
                 var NAMES_GENERAL = {
                     protected: "Protected",
                     water: "Water",
@@ -262,7 +293,6 @@
                     tech_mixed: "Research/Tech + Residential",
                 };
 
-                // classes: [pixel value, RAT variable name, [r, g, b]]
                 var RASTERS = {
                     general: {
                         file: "rasters/test_general_3857.tif",
@@ -332,139 +362,194 @@
                     },
                 };
 
-                var map = L.map("lul-raster-map", {
-                    center: [36.17, -115.14],
-                    zoom: 11,
-                    zoomControl: true,
-                    scrollWheelZoom: false,
-                    keyboard: false,
+                var SRC_ID = "lul-raster";
+                var LAYER_ID = "lul-raster-layer";
+
+                var map = new maplibregl.Map({
+                    container: "lul-raster-map",
+                    style: {
+                        version: 8,
+                        sources: {
+                            carto: {
+                                type: "raster",
+                                tiles: [
+                                    "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+                                    "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+                                    "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+                                ],
+                                tileSize: 256,
+                                attribution:
+                                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+                            },
+                        },
+                        layers: [{ id: "carto", type: "raster", source: "carto" }],
+                    },
+                    center: [-115.14, 36.17],
+                    zoom: 9.5,
+                    scrollZoom: false,
                 });
+                map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
 
-                L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-                    attribution:
-                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-                    subdomains: "abcd",
-                    maxZoom: 19,
-                }).addTo(map);
+                // 3857 meters -> lng/lat (WGS84) for image-source corner placement.
+                var R = 6378137;
+                function toLngLat(x, y) {
+                    return [(x / R) * (180 / Math.PI), (2 * Math.atan(Math.exp(y / R)) - Math.PI / 2) * (180 / Math.PI)];
+                }
 
-                // Build a value -> "rgb(...)" lookup from a raster's class list.
+                // value -> [r,g,b] lookup for a raster config
                 function paletteFor(cfg) {
                     var lut = {};
                     cfg.classes.forEach(function (c) {
-                        lut[c[0]] = "rgb(" + c[2][0] + "," + c[2][1] + "," + c[2][2] + ")";
+                        lut[c[0]] = c[2];
                     });
                     return lut;
                 }
 
-                // Legend control, rebuilt each time the active raster changes.
-                var legend = L.control({ position: "bottomright" });
-                legend.onAdd = function () {
-                    this._div = L.DomUtil.create("div", "lul-legend");
-                    L.DomEvent.disableClickPropagation(this._div);
-                    L.DomEvent.disableScrollPropagation(this._div);
-                    return this._div;
-                };
-                legend.addTo(map);
+                // Bake a single-band categorical georaster into an RGBA canvas at
+                // native resolution. nodata / unmapped values -> transparent. This is
+                // the key difference from the Leaflet plugin: instead of the plugin
+                // re-sampling into small canvases per tile, we hand MapLibre one
+                // full-res texture and let the GPU resample it (nearest or linear).
+                function bakeCanvas(georaster, lut) {
+                    var w = georaster.width,
+                        h = georaster.height;
+                    var band = georaster.values[0];
+                    var canvas = document.createElement("canvas");
+                    canvas.width = w;
+                    canvas.height = h;
+                    var ctx = canvas.getContext("2d");
+                    var img = ctx.createImageData(w, h);
+                    var data = img.data;
+                    for (var y = 0; y < h; y++) {
+                        var row = band[y];
+                        var base = y * w * 4;
+                        for (var x = 0; x < w; x++) {
+                            var color = lut[row[x]];
+                            var o = base + x * 4;
+                            if (color) {
+                                data[o] = color[0];
+                                data[o + 1] = color[1];
+                                data[o + 2] = color[2];
+                                data[o + 3] = 255;
+                            }
+                        }
+                    }
+                    ctx.putImageData(img, 0, 0);
+                    return canvas;
+                }
+
+                var legendEl = document.getElementById("lul-legend");
                 function renderLegend(cfg) {
-                    legend._div.innerHTML =
-                        '<div class="lul-legend-title">' +
-                        "<span>" +
+                    legendEl.innerHTML =
+                        '<div class="lul-legend-title"><span>' +
                         cfg.title +
-                        "</span>" +
-                        '<span class="lul-legend-caret">▼</span>' +
-                        "</div>" +
-                        '<div class="lul-legend-body">' +
+                        '</span><span class="lul-legend-caret">▼</span></div><div class="lul-legend-body">' +
                         cfg.classes
                             .map(function (c) {
                                 return (
                                     '<div class="lul-legend-row"><span class="lul-legend-swatch" style="background:rgb(' +
-                                    c[2][0] +
-                                    "," +
-                                    c[2][1] +
-                                    "," +
-                                    c[2][2] +
-                                    ')"></span>' +
-                                    "<span>" +
+                                    c[2].join(",") +
+                                    ')"></span><span>' +
                                     ((cfg.names && cfg.names[c[1]]) || c[1]) +
                                     "</span></div>"
                                 );
                             })
                             .join("") +
                         "</div>";
-                    legend._div.querySelector(".lul-legend-title").addEventListener("click", function () {
-                        legend._div.classList.toggle("collapsed");
+                    legendEl.querySelector(".lul-legend-title").addEventListener("click", function () {
+                        legendEl.classList.toggle("collapsed");
                     });
                 }
 
-                var cache = {}; // key -> georaster
-                var currentLayer = null;
+                var loadingEl = document.getElementById("lul-loading");
+                var cache = {}; // key -> { canvas, coordinates }
                 var currentOpacity = 0.75;
-                var didFit = false;
+                var currentResample = "nearest";
                 var reqToken = 0;
+                var didFit = false;
+
+                function placeLayer(entry) {
+                    if (map.getLayer(LAYER_ID)) map.removeLayer(LAYER_ID);
+                    if (map.getSource(SRC_ID)) map.removeSource(SRC_ID);
+                    map.addSource(SRC_ID, {
+                        type: "canvas",
+                        canvas: entry.canvas,
+                        coordinates: entry.coordinates,
+                        animate: false,
+                    });
+                    map.addLayer({
+                        id: LAYER_ID,
+                        type: "raster",
+                        source: SRC_ID,
+                        paint: {
+                            "raster-opacity": currentOpacity,
+                            "raster-resampling": currentResample,
+                            "raster-fade-duration": 0,
+                        },
+                    });
+                    if (!didFit) {
+                        map.fitBounds(
+                            [entry.coordinates[3], entry.coordinates[1]], // [SW, NE] approx from BL, TR
+                            { padding: 20, duration: 0 },
+                        );
+                        didFit = true;
+                    }
+                }
 
                 function showRaster(key) {
                     var cfg = RASTERS[key];
                     var myToken = ++reqToken;
                     renderLegend(cfg);
-
-                    function addLayer(georaster) {
-                        if (myToken !== reqToken) return; // a newer tab was clicked
-                        if (currentLayer) map.removeLayer(currentLayer);
-                        var lut = paletteFor(cfg);
-                        currentLayer = new GeoRasterLayer({
-                            georaster: georaster,
-                            opacity: currentOpacity,
-                            resolution: 128,
-                            // categorical data: map each class value to its color;
-                            // unknown / no-data values render transparent.
-                            pixelValuesToColorFn: function (values) {
-                                return lut[values[0]] || null;
-                            },
-                        });
-                        currentLayer.addTo(map);
-                        if (!didFit) {
-                            map.fitBounds(currentLayer.getBounds());
-                            didFit = true;
-                        }
-                    }
-
                     if (cache[key]) {
-                        addLayer(cache[key]);
-                    } else {
-                        fetch(cfg.file)
-                            .then(function (res) {
-                                if (!res.ok) throw new Error("HTTP " + res.status);
-                                return res.arrayBuffer();
-                            })
-                            .then(parseGeoraster)
-                            .then(function (georaster) {
-                                cache[key] = georaster;
-                                addLayer(georaster);
-                            })
-                            .catch(function (err) {
-                                console.error("Failed to load " + cfg.file + ":", err);
-                            });
+                        placeLayer(cache[key]);
+                        return;
                     }
+                    loadingEl.classList.remove("hidden");
+                    fetch(cfg.file)
+                        .then(function (res) {
+                            if (!res.ok) throw new Error("HTTP " + res.status);
+                            return res.arrayBuffer();
+                        })
+                        .then(parseGeoraster)
+                        .then(function (georaster) {
+                            var canvas = bakeCanvas(georaster, paletteFor(cfg));
+                            // canvas source coords: [TL, TR, BR, BL] as [lng,lat]
+                            var entry = {
+                                canvas: canvas,
+                                coordinates: [
+                                    toLngLat(georaster.xmin, georaster.ymax),
+                                    toLngLat(georaster.xmax, georaster.ymax),
+                                    toLngLat(georaster.xmax, georaster.ymin),
+                                    toLngLat(georaster.xmin, georaster.ymin),
+                                ],
+                            };
+                            cache[key] = entry;
+                            if (myToken !== reqToken) return;
+                            placeLayer(entry);
+                            loadingEl.classList.add("hidden");
+                        })
+                        .catch(function (err) {
+                            console.error("Failed to load " + cfg.file + ":", err);
+                            loadingEl.textContent = "Failed to load raster";
+                        });
                 }
 
-                // Tiny opacity slider (top-right).
-                var opacityCtl = L.control({ position: "topright" });
-                opacityCtl.onAdd = function () {
-                    var div = L.DomUtil.create("div", "lul-opacity");
-                    div.innerHTML =
-                        '<span class="lul-opacity-label">Opacity</span>' +
-                        '<input type="range" min="0" max="1" step="0.05" value="' +
-                        currentOpacity +
-                        '" />';
-                    L.DomEvent.disableClickPropagation(div);
-                    L.DomEvent.disableScrollPropagation(div);
-                    div.querySelector("input").addEventListener("input", function () {
-                        currentOpacity = parseFloat(this.value);
-                        if (currentLayer) currentLayer.setOpacity(currentOpacity);
+                document.getElementById("lul-opacity-input").addEventListener("input", function () {
+                    currentOpacity = parseFloat(this.value);
+                    if (map.getLayer(LAYER_ID)) map.setPaintProperty(LAYER_ID, "raster-opacity", currentOpacity);
+                });
+
+                document.querySelectorAll(".lul-resample button").forEach(function (btn) {
+                    btn.addEventListener("click", function () {
+                        document.querySelectorAll(".lul-resample button").forEach(function (b) {
+                            b.classList.remove("active");
+                        });
+                        btn.classList.add("active");
+                        currentResample = btn.getAttribute("data-mode");
+                        if (map.getLayer(LAYER_ID))
+                            map.setPaintProperty(LAYER_ID, "raster-resampling", currentResample);
                     });
-                    return div;
-                };
-                opacityCtl.addTo(map);
+                });
 
                 var tabs = document.querySelectorAll(".lul-tab");
                 tabs.forEach(function (tab) {
@@ -477,7 +562,9 @@
                     });
                 });
 
-                showRaster("general");
+                map.on("load", function () {
+                    showRaster("general");
+                });
             })();
         </script>
     </body>
