@@ -1,6 +1,5 @@
 <PAMDataset>
   <PAMRasterBand band="1">
-    <Description>classification</Description>
     <GDALRasterAttributeTable tableType="thematic">
       <FieldDefn index="0">
         <Name>Pixel Value</Name>
@@ -75,7 +74,7 @@
       <Row index="5">
         <F>5</F>
         <F>family1_residential</F>
-        <F>140</F>
+        <F>127</F>
         <F>124</F>
         <F>164</F>
         <F>255</F>
@@ -83,7 +82,7 @@
       <Row index="6">
         <F>6</F>
         <F>family2_residential</F>
-        <F>101</F>
+        <F>88</F>
         <F>88</F>
         <F>128</F>
         <F>255</F>
@@ -99,15 +98,15 @@
       <Row index="8">
         <F>8</F>
         <F>family4_residential</F>
-        <F>43</F>
         <F>31</F>
+        <F>33</F>
         <F>74</F>
         <F>255</F>
       </Row>
       <Row index="9">
         <F>9</F>
         <F>hearing_only_residential</F>
-        <F>210</F>
+        <F>195</F>
         <F>194</F>
         <F>240</F>
         <F>255</F>
