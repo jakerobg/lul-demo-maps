@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>National Zoning Atlas — Coverage by State</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+        <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+        <style>
+            .lul-coverage {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                color: #393348;
+                max-width: 1180px;
+                margin: 0 auto;
+                padding: 28px 20px 40px;
+                box-sizing: border-box;
+            }
+            .lul-map-eyebrow {
+                font-size: 13px;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.6);
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            /* ---- national rollup ---- */
+            .lul-rollup {
+                display: flex;
+                gap: 28px;
+                text-transform: none;
+                letter-spacing: normal;
+            }
+            .lul-rollup div {
+                text-align: right;
+            }
+            .lul-rollup .lul-rollup-num {
+                font-size: 22px;
+                font-weight: 700;
+                color: #393348;
+                line-height: 1.1;
+                font-variant-numeric: tabular-nums;
+            }
+            .lul-rollup .lul-rollup-label {
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.5);
+                margin-top: 4px;
+            }
+
+            /* ---- map shell ---- */
+            #lul-coverage-map {
+                width: 100%;
+                height: 640px;
+                border-radius: 4px;
+                border: 1px solid rgba(57, 51, 72, 0.15);
+                position: relative;
+                background: #fff;
+                overflow: hidden;
+            }
+            #lul-coverage-map canvas {
+                cursor: default;
+            }
+            .lul-map-caption {
+                font-size: 12px;
+                color: rgba(57, 51, 72, 0.5);
+                margin-top: 10px;
+            }
+
+            /* ---- legend ---- */
+            .lul-legend {
+                position: absolute;
+                bottom: 12px;
+                left: 12px;
+                z-index: 2;
+                background: #fff;
+                padding: 12px 14px;
+                border-radius: 4px;
+                border: 1px solid rgba(57, 51, 72, 0.12);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                pointer-events: none;
+            }
+            .lul-legend-title {
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.6);
+                margin-bottom: 9px;
+            }
+            .lul-legend-key {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 11px;
+                color: rgba(57, 51, 72, 0.7);
+            }
+            .lul-legend-key + .lul-legend-key {
+                margin-top: 7px;
+            }
+            .lul-legend-swatch {
+                width: 13px;
+                height: 13px;
+                display: block;
+                flex: none;
+                background: rgba(57, 51, 72, 0.78);
+                border: 1px solid rgba(57, 51, 72, 0.15);
+            }
+            .lul-legend-swatch.is-nodata {
+                background: #efedec;
+            }
+
+            /* ---- hover tooltip that follows the cursor ---- */
+            .lul-hovertip {
+                position: absolute;
+                z-index: 5;
+                pointer-events: none;
+                background: #efedec;
+                color: #393348;
+                border: 1px solid rgba(57, 51, 72, 0.12);
+                border-left: 3px solid #c9d0a0;
+                border-radius: 4px;
+                padding: 6px 10px;
+                font-size: 11px;
+                line-height: 1.25;
+                white-space: nowrap;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+                transform: translate(14px, 14px);
+                opacity: 0;
+                transition: opacity 0.12s ease;
+            }
+            .lul-hovertip.is-visible {
+                opacity: 1;
+            }
+            .lul-hovertip b {
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                font-size: 10px;
+                color: rgba(57, 51, 72, 0.55);
+                display: block;
+            }
+            .lul-hovertip .lul-hovertip-pct {
+                font-size: 15px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+                margin-top: 2px;
+            }
+
+            /* ---- pinned stats panel ---- */
+            .lul-statbox {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                z-index: 6;
+                width: 300px;
+                background: #fff;
+                border-radius: 4px;
+                border: 1px solid rgba(57, 51, 72, 0.15);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
+                padding: 16px 18px 18px;
+                box-sizing: border-box;
+                display: none;
+            }
+            .lul-statbox.is-open {
+                display: block;
+            }
+            .lul-statbox-close {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                border: none;
+                background: none;
+                font-size: 18px;
+                line-height: 1;
+                color: rgba(57, 51, 72, 0.4);
+                cursor: pointer;
+                padding: 4px 6px;
+                font-family: inherit;
+            }
+            .lul-statbox-close:hover {
+                color: #393348;
+            }
+            .lul-statbox-abbr {
+                display: inline-block;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: #393348;
+                background: #e0e5c2;
+                padding: 3px 8px;
+            }
+            .lul-statbox-name {
+                font-size: 19px;
+                font-weight: 700;
+                line-height: 1.15;
+                margin: 3px 0 14px;
+                padding-right: 18px;
+            }
+            .lul-statbox-bar {
+                height: 8px;
+                background: #efedec;
+                border-radius: 4px;
+                overflow: hidden;
+                margin-bottom: 6px;
+            }
+            .lul-statbox-bar i {
+                display: block;
+                height: 100%;
+                background: #c9d0a0;
+                border-radius: 4px;
+                width: 0;
+                transition: width 0.35s ease;
+            }
+            .lul-statbox-pct {
+                font-size: 26px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+                line-height: 1;
+            }
+            .lul-statbox-pct small {
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.5);
+                margin-left: 6px;
+            }
+            .lul-statrow {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                border-top: 1px solid rgba(57, 51, 72, 0.1);
+                padding: 9px 0;
+                font-size: 12px;
+            }
+            .lul-statrow:first-of-type {
+                margin-top: 14px;
+            }
+            .lul-statrow span {
+                color: rgba(57, 51, 72, 0.6);
+            }
+            .lul-statrow b {
+                font-size: 14px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+            }
+            .lul-statbox-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 14px;
+            }
+
+            /* ---- buttons: shared hero style (see buttons.html) ---- */
+            .lul-hero-actions {
+                --lul-header: #393348;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                color: var(--lul-header);
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                display: flex;
+                align-items: center;
+                justify-content: left;
+                gap: 18px;
+                flex-wrap: wrap;
+            }
+            .lul-hero-actions *,
+            .lul-hero-actions *::before,
+            .lul-hero-actions *::after {
+                box-sizing: border-box;
+            }
+            .lul-hero-actions .lul-hero__btn {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                font-weight: 500;
+                font-size: 1rem;
+                padding: 14px 26px;
+                border-radius: 0;
+                text-decoration: none;
+                letter-spacing: 0.02em;
+                border: 1px solid #393347;
+                cursor: pointer;
+                transition:
+                    background 0.25s ease,
+                    color 0.25s ease,
+                    gap 0.25s ease;
+            }
+            .lul-hero-actions .lul-hero__btn--primary {
+                background: #393347;
+                color: #ffffff;
+            }
+            .lul-hero-actions .lul-hero__btn--primary:hover {
+                background: #4c4460;
+                border-color: #4c4460;
+                gap: 12px;
+            }
+            .lul-hero-actions .lul-hero__btn--secondary {
+                background: transparent;
+                color: #393347;
+            }
+            .lul-hero-actions .lul-hero__btn--secondary:hover {
+                background: #393347;
+                color: #ffffff;
+                gap: 12px;
+            }
+            .lul-hero-actions .lul-hero__or {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                color: var(--lul-header);
+                font-size: 1rem;
+                opacity: 0.7;
+            }
+            .lul-hero-actions .lul-hero__btn svg {
+                width: 14px;
+                height: 14px;
+                transition: transform 0.25s ease;
+            }
+            .lul-hero-actions .lul-hero__btn:hover svg {
+                transform: translateX(2px);
+            }
+            /* compact variant so the pair sits on one line inside the map panel */
+            .lul-statbox-actions.lul-hero-actions {
+                gap: 8px;
+                flex-wrap: nowrap;
+            }
+            .lul-statbox-actions .lul-hero__btn {
+                font-size: 0.75rem;
+                padding: 9px 12px;
+                gap: 6px;
+                flex: 1;
+                white-space: nowrap;
+            }
+            .lul-statbox-actions .lul-hero__btn:hover {
+                gap: 9px;
+            }
+            .lul-statbox-actions .lul-hero__btn svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            /* ---- status / error ---- */
+            .lul-status {
+                position: absolute;
+                top: 12px;
+                left: 12px;
+                z-index: 6;
+                background: #fff;
+                border: 1px solid rgba(57, 51, 72, 0.15);
+                border-left: 3px solid #c9d0a0;
+                border-radius: 4px;
+                padding: 10px 14px;
+                font-size: 12px;
+                color: rgba(57, 51, 72, 0.75);
+                max-width: 360px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            }
+            .lul-status.is-error {
+                border-left-color: #b4413c;
+            }
+            .lul-status.is-hidden {
+                display: none;
+            }
+
+            @media (max-width: 700px) {
+                #lul-coverage-map {
+                    height: 460px;
+                }
+                .lul-statbox {
+                    width: auto;
+                    left: 12px;
+                    right: 12px;
+                    top: auto;
+                    bottom: 12px;
+                }
+                .lul-legend {
+                    display: none;
+                }
+            }
+        </style>
+
+        <section class="lul-coverage">
+            <div class="lul-map-eyebrow">
+                <div>Land Use Labs Data Coverage</div>
+                <div class="lul-rollup" id="lul-rollup"></div>
+            </div>
+
+            <div id="lul-coverage-map">
+                <div class="lul-status" id="lul-status">Loading coverage data…</div>
+
+                <div class="lul-legend">
+                    <div class="lul-legend-title">Coverage</div>
+                    <div class="lul-legend-key"><i class="lul-legend-swatch"></i> States with data coverage</div>
+                    <div class="lul-legend-key"><i class="lul-legend-swatch is-nodata"></i> No data available</div>
+                </div>
+
+                <div class="lul-hovertip" id="lul-hovertip"></div>
+
+                <div class="lul-statbox" id="lul-statbox">
+                    <button class="lul-statbox-close" id="lul-statbox-close" type="button" aria-label="Close">
+                        &times;
+                    </button>
+                    <div class="lul-statbox-abbr" id="lul-sb-abbr"></div>
+                    <div class="lul-statbox-name" id="lul-sb-name"></div>
+                    <div class="lul-statbox-pct" id="lul-sb-pct"></div>
+                    <div class="lul-statbox-bar" style="margin-top: 10px"><i id="lul-sb-bar"></i></div>
+                    <div class="lul-statrow"><span>Total jurisdictions</span><b id="lul-sb-total"></b></div>
+                    <div class="lul-statrow"><span>Published</span><b id="lul-sb-pub"></b></div>
+                    <div class="lul-statrow"><span>Remaining</span><b id="lul-sb-rem"></b></div>
+                    <div class="lul-statbox-actions lul-hero-actions">
+                        <a class="lul-hero__btn lul-hero__btn--primary" id="lul-sb-product" href="/product-selection"
+                            >Find Product
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path
+                                    d="M4 10h12m0 0l-5-5m5 5l-5 5"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </a>
+                        <a class="lul-hero__btn lul-hero__btn--secondary" id="lul-sb-contact" href="/contact"
+                            >Contact Us
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path
+                                    d="M4 10h12m0 0l-5-5m5 5l-5 5"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lul-map-caption">Percent of jurisdictions with purchasable data. Click a state for detail.</div>
+        </section>
+
+        <script>
+            (function () {
+                "use strict";
+
+                var SUMMARY_ENDPOINT = "https://edit.zoningatlas.org/atlas/status/summary/state/";
+                var STATES_GEOJSON = "states/gz_2010_us_040_00_500k.json";
+
+                // Destination for the two panel buttons. {abbr} / {state} are substituted.
+                var PRODUCT_URL = "/product-selection?state={abbr}";
+                var CONTACT_URL = "/contact?state={abbr}";
+
+                var BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
+                // One flat color for every state with data; grey for states without.
+                var STATE_FILL = "#393348";
+                var HOVER_FILL = "#4C4460";
+                var NO_DATA_FILL = "#EFEDEC";
+                var ACCENT = "#C9D0A0";
+
+                var el = function (id) {
+                    return document.getElementById(id);
+                };
+                var fmt = function (n) {
+                    return typeof n === "number" ? n.toLocaleString("en-US") : "—";
+                };
+
+                // ---------- map ----------
+                var map = new maplibregl.Map({
+                    container: "lul-coverage-map",
+                    style: BASEMAP_STYLE,
+                    center: [-96, 38],
+                    zoom: 3.2,
+                    minZoom: 2,
+                    maxZoom: 8,
+                    attributionControl: false,
+                    dragRotate: false,
+                    pitchWithRotate: false,
+                    touchZoomRotate: true,
+                });
+                map.touchZoomRotate.disableRotation();
+                map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+                map.addControl(
+                    new maplibregl.AttributionControl({
+                        compact: true,
+                        customAttribution: "Boundaries: US Census Bureau",
+                    }),
+                    "bottom-right",
+                );
+
+                var status = el("lul-status");
+                function setStatus(msg, isError) {
+                    if (!msg) {
+                        status.classList.add("is-hidden");
+                        return;
+                    }
+                    status.classList.remove("is-hidden");
+                    status.classList.toggle("is-error", !!isError);
+                    status.textContent = msg;
+                }
+
+                // Aleutian islands cross the antimeridian with positive longitudes, which
+                // would otherwise draw Alaska smeared across the whole map. Shift them west.
+                function unwrapAntimeridian(geojson) {
+                    function walk(coords) {
+                        if (typeof coords[0] === "number") {
+                            if (coords[0] > 0) coords[0] -= 360;
+                            return;
+                        }
+                        coords.forEach(walk);
+                    }
+                    geojson.features.forEach(function (f) {
+                        if (f.properties.NAME !== "Alaska") return;
+                        walk(f.geometry.coordinates);
+                    });
+                    return geojson;
+                }
+
+                function joinData(geojson, rows) {
+                    var byName = {};
+                    rows.forEach(function (r) {
+                        byName[String(r.state).trim().toLowerCase()] = r;
+                    });
+                    geojson.features.forEach(function (f) {
+                        var row = byName[String(f.properties.NAME).trim().toLowerCase()];
+                        f.properties.hasData = !!row;
+                        f.properties.abbreviation = row ? row.abbreviation : "";
+                        f.properties.total_jurisdictions = row ? row.total_jurisdictions : null;
+                        f.properties.published_jurisdictions = row ? row.published_jurisdictions : null;
+                        f.properties.percentage = row ? row.percentage : -1;
+                        // 0% counts as no coverage, same grey as a state we have nothing for.
+                        f.properties.isCovered = !!row && row.percentage > 0;
+                    });
+                    return geojson;
+                }
+
+                // MapLibre places a symbol on every part of a MultiPolygon, so states with
+                // islands get their abbreviation several times. Label off a single point per
+                // state instead: the centroid of its largest polygon.
+                function labelPoints(geojson) {
+                    function ringArea(r) {
+                        var a = 0;
+                        for (var i = 0; i < r.length - 1; i++) {
+                            a += r[i][0] * r[i + 1][1] - r[i + 1][0] * r[i][1];
+                        }
+                        return a / 2;
+                    }
+                    function ringCentroid(r) {
+                        var a = ringArea(r),
+                            cx = 0,
+                            cy = 0;
+                        if (!a) return null;
+                        for (var i = 0; i < r.length - 1; i++) {
+                            var f = r[i][0] * r[i + 1][1] - r[i + 1][0] * r[i][1];
+                            cx += (r[i][0] + r[i + 1][0]) * f;
+                            cy += (r[i][1] + r[i + 1][1]) * f;
+                        }
+                        return [cx / (6 * a), cy / (6 * a)];
+                    }
+                    return {
+                        type: "FeatureCollection",
+                        features: geojson.features
+                            .map(function (f) {
+                                var polys =
+                                    f.geometry.type === "MultiPolygon"
+                                        ? f.geometry.coordinates
+                                        : [f.geometry.coordinates];
+                                var biggest = polys.reduce(function (best, p) {
+                                    return !best || Math.abs(ringArea(p[0])) > Math.abs(ringArea(best[0])) ? p : best;
+                                }, null);
+                                var pt = biggest && ringCentroid(biggest[0]);
+                                if (!pt) return null;
+                                return {
+                                    type: "Feature",
+                                    properties: f.properties,
+                                    geometry: { type: "Point", coordinates: pt },
+                                };
+                            })
+                            .filter(Boolean),
+                    };
+                }
+
+                function renderRollup(rows) {
+                    var total = 0,
+                        pub = 0;
+                    rows.forEach(function (r) {
+                        total += r.total_jurisdictions || 0;
+                        pub += r.published_jurisdictions || 0;
+                    });
+                    el("lul-rollup").innerHTML =
+                        '<div><div class="lul-rollup-num">' +
+                        fmt(pub) +
+                        '</div><div class="lul-rollup-label">Published</div></div>' +
+                        '<div><div class="lul-rollup-num">' +
+                        fmt(total) +
+                        '</div><div class="lul-rollup-label">Jurisdictions</div></div>';
+                }
+
+                // Keep our fills beneath the basemap's own labels so place names read through.
+                function firstSymbolLayerId() {
+                    var layers = map.getStyle().layers || [];
+                    for (var i = 0; i < layers.length; i++) {
+                        if (layers[i].type === "symbol") return layers[i].id;
+                    }
+                    return undefined;
+                }
+
+                function addLayers(geojson) {
+                    map.addSource("states", { type: "geojson", data: geojson, generateId: true });
+                    var beforeId = firstSymbolLayerId();
+
+                    map.addLayer(
+                        {
+                            id: "states-fill",
+                            type: "fill",
+                            source: "states",
+                            paint: {
+                                "fill-color": [
+                                    "case",
+                                    ["boolean", ["feature-state", "hover"], false],
+                                    HOVER_FILL,
+                                    ["==", ["get", "isCovered"], false],
+                                    NO_DATA_FILL,
+                                    STATE_FILL,
+                                ],
+                                "fill-opacity": [
+                                    "case",
+                                    ["boolean", ["feature-state", "hover"], false],
+                                    0.9,
+                                    ["boolean", ["feature-state", "selected"], false],
+                                    0.9,
+                                    0.78,
+                                ],
+                            },
+                        },
+                        beforeId,
+                    );
+
+                    map.addLayer(
+                        {
+                            id: "states-line",
+                            type: "line",
+                            source: "states",
+                            paint: {
+                                "line-color": [
+                                    "case",
+                                    ["boolean", ["feature-state", "selected"], false],
+                                    ACCENT,
+                                    "rgba(255,255,255,0.9)",
+                                ],
+                                "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, 0.9],
+                            },
+                        },
+                        beforeId,
+                    );
+
+                    map.addSource("state-labels", { type: "geojson", data: labelPoints(geojson) });
+                    map.addLayer({
+                        id: "states-label",
+                        type: "symbol",
+                        source: "state-labels",
+                        minzoom: 3,
+                        layout: {
+                            "text-field": ["get", "abbreviation"],
+                            "text-font": ["Open Sans Bold"],
+                            "text-size": 11,
+                            "text-letter-spacing": 0.08,
+                            "text-allow-overlap": false,
+                            "text-padding": 3,
+                        },
+                        paint: {
+                            "text-color": [
+                                "case",
+                                ["==", ["get", "isCovered"], false],
+                                "rgba(57,51,72,0.7)",
+                                "#FFFFFF",
+                            ],
+                            "text-halo-color": [
+                                "case",
+                                ["==", ["get", "isCovered"], false],
+                                "rgba(255,255,255,0.9)",
+                                "rgba(57,51,72,0.45)",
+                            ],
+                            "text-halo-width": 1,
+                        },
+                    });
+
+                    wireInteraction();
+                    fitToData(geojson);
+                }
+
+                function fitToData(geojson) {
+                    var b = new maplibregl.LngLatBounds();
+                    geojson.features.forEach(function (f) {
+                        if (f.properties.NAME === "Puerto Rico") return;
+                        var walk = function (c) {
+                            if (typeof c[0] === "number") {
+                                b.extend(c);
+                                return;
+                            }
+                            c.forEach(walk);
+                        };
+                        walk(f.geometry.coordinates);
+                    });
+                    map.fitBounds(b, { padding: { top: 30, bottom: 40, left: 30, right: 30 }, duration: 0 });
+                }
+
+                // ---------- interaction ----------
+                var hoverId = null;
+                var selectedId = null;
+                var tip = el("lul-hovertip");
+                var statbox = el("lul-statbox");
+                var mapEl = el("lul-coverage-map");
+
+                function setHover(id) {
+                    if (hoverId === id) return;
+                    if (hoverId !== null) map.setFeatureState({ source: "states", id: hoverId }, { hover: false });
+                    hoverId = id;
+                    if (hoverId !== null) map.setFeatureState({ source: "states", id: hoverId }, { hover: true });
+                }
+
+                function showTip(props, point) {
+                    tip.innerHTML =
+                        "<b>" +
+                        (props.abbreviation || props.NAME) +
+                        "</b><div class='lul-hovertip-pct'>" +
+                        (props.percentage >= 0 ? props.percentage + "% published" : "No data") +
+                        "</div>";
+                    tip.classList.add("is-visible");
+                    positionTip(point);
+                }
+
+                function positionTip(point) {
+                    var w = tip.offsetWidth,
+                        h = tip.offsetHeight;
+                    var x = point.x,
+                        y = point.y;
+                    // flip toward the inside of the map near the edges
+                    tip.style.transform =
+                        "translate(" +
+                        (x + w + 24 > mapEl.clientWidth ? -w - 14 : 14) +
+                        "px, " +
+                        (y + h + 24 > mapEl.clientHeight ? -h - 14 : 14) +
+                        "px)";
+                    tip.style.left = x + "px";
+                    tip.style.top = y + "px";
+                }
+
+                function hideTip() {
+                    tip.classList.remove("is-visible");
+                }
+
+                function openStatbox(props) {
+                    var abbr = el("lul-sb-abbr");
+                    abbr.textContent = props.abbreviation || "";
+                    abbr.style.display = props.abbreviation ? "inline-block" : "none";
+                    el("lul-sb-name").textContent = props.NAME;
+                    var hasData = props.percentage >= 0;
+                    el("lul-sb-pct").innerHTML = hasData
+                        ? props.percentage + "%<small>published</small>"
+                        : "<span style='font-size:15px'>No data reported</span>";
+                    el("lul-sb-bar").style.width = (hasData ? props.percentage : 0) + "%";
+                    el("lul-sb-total").textContent = fmt(props.total_jurisdictions);
+                    el("lul-sb-pub").textContent = fmt(props.published_jurisdictions);
+                    el("lul-sb-rem").textContent = hasData
+                        ? fmt(props.total_jurisdictions - props.published_jurisdictions)
+                        : "—";
+                    var sub = function (tpl) {
+                        return tpl
+                            .replace("{abbr}", encodeURIComponent(props.abbreviation || ""))
+                            .replace("{state}", encodeURIComponent(props.NAME));
+                    };
+                    el("lul-sb-product").href = sub(PRODUCT_URL);
+                    el("lul-sb-contact").href = sub(CONTACT_URL);
+                    statbox.classList.add("is-open");
+                }
+
+                function closeStatbox() {
+                    statbox.classList.remove("is-open");
+                    if (selectedId !== null) {
+                        map.setFeatureState({ source: "states", id: selectedId }, { selected: false });
+                        selectedId = null;
+                    }
+                }
+
+                function wireInteraction() {
+                    map.on("mousemove", "states-fill", function (e) {
+                        if (!e.features.length) return;
+                        var f = e.features[0];
+                        // states without coverage are inert: no highlight, no tooltip, no click
+                        if (!f.properties.isCovered) {
+                            setHover(null);
+                            hideTip();
+                            map.getCanvas().style.cursor = "default";
+                            return;
+                        }
+                        setHover(f.id);
+                        showTip(f.properties, e.point);
+                        map.getCanvas().style.cursor = "pointer";
+                    });
+
+                    map.on("mouseleave", "states-fill", function () {
+                        setHover(null);
+                        hideTip();
+                        map.getCanvas().style.cursor = "default";
+                    });
+
+                    map.on("click", "states-fill", function (e) {
+                        if (!e.features.length) return;
+                        var f = e.features[0];
+                        if (!f.properties.isCovered) return;
+                        if (selectedId !== null)
+                            map.setFeatureState({ source: "states", id: selectedId }, { selected: false });
+                        selectedId = f.id;
+                        map.setFeatureState({ source: "states", id: selectedId }, { selected: true });
+                        openStatbox(f.properties);
+                    });
+
+                    // clicking empty ocean closes the panel
+                    map.on("click", function (e) {
+                        var hits = map.queryRenderedFeatures(e.point, { layers: ["states-fill"] });
+                        if (!hits.length) closeStatbox();
+                    });
+
+                    el("lul-statbox-close").addEventListener("click", closeStatbox);
+                    document.addEventListener("keydown", function (e) {
+                        if (e.key === "Escape") closeStatbox();
+                    });
+                }
+
+                // ---------- load ----------
+                function loadSummary() {
+                    return fetch(SUMMARY_ENDPOINT, { credentials: "omit" }).then(function (r) {
+                        if (!r.ok) throw new Error("HTTP " + r.status);
+                        return r.json();
+                    });
+                }
+
+                map.on("load", function () {
+                    Promise.all([
+                        fetch(STATES_GEOJSON).then(function (r) {
+                            if (!r.ok) throw new Error("state boundaries: HTTP " + r.status);
+                            return r.json();
+                        }),
+                        loadSummary().catch(function (err) {
+                            console.error("Coverage summary failed:", err);
+                            return null;
+                        }),
+                    ])
+                        .then(function (res) {
+                            var geojson = unwrapAntimeridian(res[0]);
+                            var rows = res[1];
+                            if (!rows) {
+                                setStatus(
+                                    "Couldn't reach the coverage endpoint (network or CORS). Boundaries shown without data.",
+                                    true,
+                                );
+                                rows = [];
+                            } else {
+                                setStatus(null);
+                                renderRollup(rows);
+                            }
+                            addLayers(joinData(geojson, rows));
+                        })
+                        .catch(function (err) {
+                            console.error(err);
+                            setStatus("Failed to load the map: " + err.message, true);
+                        });
+                });
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,99 @@
+<style>
+    .lul-hero-actions {
+        --lul-header: #393348;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        color: var(--lul-header);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        display: flex;
+        align-items: center;
+        justify-content: left;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+    .lul-hero-actions *,
+    .lul-hero-actions *::before,
+    .lul-hero-actions *::after {
+        box-sizing: border-box;
+    }
+
+    .lul-hero-actions .lul-hero__btn {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-weight: 500;
+        font-size: 1rem;
+        padding: 14px 26px;
+        border-radius: 0;
+        text-decoration: none;
+        letter-spacing: 0.02em;
+        border: 1px solid #393347;
+        cursor: pointer;
+        transition:
+            background 0.25s ease,
+            color 0.25s ease,
+            gap 0.25s ease;
+    }
+    .lul-hero-actions .lul-hero__btn--primary {
+        background: #393347;
+        color: #ffffff;
+    }
+    .lul-hero-actions .lul-hero__btn--primary:hover {
+        background: #4c4460;
+        border-color: #4c4460;
+        gap: 12px;
+    }
+    .lul-hero-actions .lul-hero__btn--secondary {
+        background: transparent;
+        color: #393347;
+    }
+    .lul-hero-actions .lul-hero__btn--secondary:hover {
+        background: #393347;
+        color: #ffffff;
+        gap: 12px;
+    }
+    .lul-hero-actions .lul-hero__or {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        color: var(--lul-header);
+        font-size: 1rem;
+        opacity: 0.7;
+    }
+    .lul-hero-actions .lul-hero__btn svg {
+        width: 14px;
+        height: 14px;
+        transition: transform 0.25s ease;
+    }
+    .lul-hero-actions .lul-hero__btn:hover svg {
+        transform: translateX(2px);
+    }
+</style>
+
+<div class="lul-hero-actions">
+    <a class="lul-hero__btn lul-hero__btn--primary" href="/product-selection"
+        >Find Product
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+                d="M4 10h12m0 0l-5-5m5 5l-5 5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+        </svg>
+    </a>
+    <span class="lul-hero__or">or</span>
+    <a class="lul-hero__btn lul-hero__btn--secondary" href="/contact"
+        >Contact Us
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path
+                d="M4 10h12m0 0l-5-5m5 5l-5 5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+        </svg>
+    </a>
+</div>
