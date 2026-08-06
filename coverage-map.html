@@ -15,6 +15,7 @@
     <body>
         <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
         <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+        <script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
 
         <style>
             .lul-coverage {
@@ -163,6 +164,30 @@
                 font-variant-numeric: tabular-nums;
                 margin-top: 2px;
             }
+            .lul-hovertip .lul-hovertip-note {
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.55);
+                margin-top: 3px;
+            }
+
+            /* published / not-published pill in the panel headline */
+            .lul-pill {
+                display: inline-block;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                padding: 5px 10px;
+                background: #efedec;
+                color: rgba(57, 51, 72, 0.65);
+            }
+            .lul-pill.is-published {
+                background: #c9d0a0;
+                color: #393348;
+            }
 
             /* ---- pinned stats panel ---- */
             .lul-statbox {
@@ -207,12 +232,13 @@
                 color: #393348;
                 background: #e0e5c2;
                 padding: 3px 8px;
+                margin-bottom: 8px;
             }
             .lul-statbox-name {
                 font-size: 19px;
                 font-weight: 700;
                 line-height: 1.15;
-                margin: 3px 0 14px;
+                margin: 0 0 10px;
                 padding-right: 18px;
             }
             .lul-statbox-bar {
@@ -235,6 +261,11 @@
                 font-weight: 700;
                 font-variant-numeric: tabular-nums;
                 line-height: 1;
+            }
+            /* when the headline is a pill rather than a number, drop the big line box
+               so the gap above it matches the gap below */
+            .lul-statbox-pct.is-pill {
+                font-size: 0;
             }
             .lul-statbox-pct small {
                 font-size: 11px;
@@ -357,6 +388,16 @@
                 width: 12px;
                 height: 12px;
             }
+            /* nothing to buy or ask about for an unpublished jurisdiction */
+            .lul-hero-actions .lul-hero__btn.is-disabled,
+            .lul-hero-actions .lul-hero__btn.is-disabled:hover {
+                pointer-events: none;
+                cursor: default;
+                background: #efedec;
+                border-color: rgba(57, 51, 72, 0.12);
+                color: rgba(57, 51, 72, 0.35);
+                gap: 6px;
+            }
 
             /* ---- status / error ---- */
             .lul-status {
@@ -409,8 +450,13 @@
 
                 <div class="lul-legend">
                     <div class="lul-legend-title">Coverage</div>
-                    <div class="lul-legend-key"><i class="lul-legend-swatch"></i> States with data coverage</div>
-                    <div class="lul-legend-key"><i class="lul-legend-swatch is-nodata"></i> No data available</div>
+                    <div class="lul-legend-key">
+                        <i class="lul-legend-swatch"></i><span id="lul-legend-covered">States with data coverage</span>
+                    </div>
+                    <div class="lul-legend-key">
+                        <i class="lul-legend-swatch is-nodata" id="lul-legend-empty-swatch"></i
+                        ><span id="lul-legend-empty">No data available</span>
+                    </div>
                 </div>
 
                 <div class="lul-hovertip" id="lul-hovertip"></div>
@@ -421,11 +467,11 @@
                     </button>
                     <div class="lul-statbox-abbr" id="lul-sb-abbr"></div>
                     <div class="lul-statbox-name" id="lul-sb-name"></div>
-                    <div class="lul-statbox-pct" id="lul-sb-pct"></div>
-                    <div class="lul-statbox-bar" style="margin-top: 10px"><i id="lul-sb-bar"></i></div>
-                    <div class="lul-statrow"><span>Total jurisdictions</span><b id="lul-sb-total"></b></div>
-                    <div class="lul-statrow"><span>Published</span><b id="lul-sb-pub"></b></div>
-                    <div class="lul-statrow"><span>Remaining</span><b id="lul-sb-rem"></b></div>
+                    <div class="lul-statbox-pct" id="lul-sb-headline"></div>
+                    <div class="lul-statbox-bar" id="lul-sb-barwrap" style="margin-top: 10px">
+                        <i id="lul-sb-bar"></i>
+                    </div>
+                    <div id="lul-sb-rows"></div>
                     <div class="lul-statbox-actions lul-hero-actions">
                         <a class="lul-hero__btn lul-hero__btn--primary" id="lul-sb-product" href="/product-selection"
                             >Find Product
@@ -462,20 +508,34 @@
             (function () {
                 "use strict";
 
-                var SUMMARY_ENDPOINT = "https://edit.zoningatlas.org/atlas/status/summary/state/";
-                var STATES_GEOJSON = "states/gz_2010_us_040_00_500k.json";
+                // Live status for every jurisdiction. The local file is a snapshot fallback
+                // for when the API can't be reached; the API is the source of truth.
+                var JURISDICTIONS_API = "https://api.zoningatlas.org/atlas_jurisdictions";
+                var JURISDICTIONS_SNAPSHOT = "atlas_jurisdictions.json";
 
-                // Destination for the two panel buttons. {abbr} / {state} are substituted.
+                // Geometry, built by build_coverage_data.py. Rerun that when boundaries change.
+                var STATES_GEOJSON = "data/states.geojson";
+                var JURISDICTION_TILES = "pmtiles://data/jurisdictions.pmtiles";
+
+                // Destination for the two panel buttons. {abbr} / {state} / {name} are substituted.
                 var PRODUCT_URL = "/product-selection?state={abbr}";
                 var CONTACT_URL = "/contact?state={abbr}";
 
                 var BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
-                // One flat color for every state with data; grey for states without.
-                var STATE_FILL = "#393348";
+                // Zoom at which the state choropleth hands off to individual jurisdictions.
+                var SWAP_ZOOM = 6;
+
+                var COVERED_FILL = "#393348";
                 var HOVER_FILL = "#4C4460";
-                var NO_DATA_FILL = "#EFEDEC";
+                var NO_DATA_FILL = "#EFEDEC"; // states we have nothing for
+                var UNPUBLISHED_FILL = "#D2D0CE"; // jurisdictions that exist but aren't published
+                var UNPUBLISHED_HOVER = "#BFBCB9";
                 var ACCENT = "#C9D0A0";
+
+                // Basemap clutter to drop: roads, rails, bridges, tunnels and their labels
+                // are pure white and fight with the polygons on top.
+                var BASEMAP_DROP = ["transportation", "transportation_name", "aeroway", "building", "housenumber", "poi"];
 
                 var el = function (id) {
                     return document.getElementById(id);
@@ -485,13 +545,18 @@
                 };
 
                 // ---------- map ----------
+                // maplibre-gl v4 wants the promise-based handler (tilev4). The plain
+                // `.tile` is a callback-style shim for maplibre v2/v3 and never resolves here.
+                var pmtilesProtocol = new pmtiles.Protocol();
+                maplibregl.addProtocol("pmtiles", pmtilesProtocol.tilev4 || pmtilesProtocol.tile);
+
                 var map = new maplibregl.Map({
                     container: "lul-coverage-map",
                     style: BASEMAP_STYLE,
                     center: [-96, 38],
                     zoom: 3.2,
                     minZoom: 2,
-                    maxZoom: 8,
+                    maxZoom: 13,
                     attributionControl: false,
                     dragRotate: false,
                     pitchWithRotate: false,
@@ -502,7 +567,7 @@
                 map.addControl(
                     new maplibregl.AttributionControl({
                         compact: true,
-                        customAttribution: "Boundaries: US Census Bureau",
+                        customAttribution: "Boundaries: Land Use Labs",
                     }),
                     "bottom-right",
                 );
@@ -518,37 +583,48 @@
                     status.textContent = msg;
                 }
 
-                // Aleutian islands cross the antimeridian with positive longitudes, which
-                // would otherwise draw Alaska smeared across the whole map. Shift them west.
-                function unwrapAntimeridian(geojson) {
-                    function walk(coords) {
-                        if (typeof coords[0] === "number") {
-                            if (coords[0] > 0) coords[0] -= 360;
-                            return;
+                // ---------- data ----------
+                var jurisdictionById = {}; // id -> API record
+                var stateStats = {}; // state_id -> { total, published, name }
+
+                function indexJurisdictions(rows) {
+                    rows.forEach(function (r) {
+                        jurisdictionById[r.id] = r;
+                        var s = stateStats[r.state_id];
+                        if (!s) {
+                            s = stateStats[r.state_id] = { total: 0, published: 0, name: r.state_name };
                         }
-                        coords.forEach(walk);
-                    }
-                    geojson.features.forEach(function (f) {
-                        if (f.properties.NAME !== "Alaska") return;
-                        walk(f.geometry.coordinates);
+                        s.total += 1;
+                        if (r.published) s.published += 1;
                     });
-                    return geojson;
                 }
 
-                function joinData(geojson, rows) {
-                    var byName = {};
+                function renderRollup(rows) {
+                    var pub = 0;
                     rows.forEach(function (r) {
-                        byName[String(r.state).trim().toLowerCase()] = r;
+                        if (r.published) pub += 1;
                     });
+                    el("lul-rollup").innerHTML =
+                        '<div><div class="lul-rollup-num">' +
+                        fmt(pub) +
+                        '</div><div class="lul-rollup-label">Published</div></div>' +
+                        '<div><div class="lul-rollup-num">' +
+                        fmt(rows.length) +
+                        '</div><div class="lul-rollup-label">Jurisdictions</div></div>';
+                }
+
+                // Stamp the per-state rollups onto the state polygons so the paint
+                // expressions can read them straight off the feature.
+                function joinStates(geojson) {
                     geojson.features.forEach(function (f) {
-                        var row = byName[String(f.properties.NAME).trim().toLowerCase()];
-                        f.properties.hasData = !!row;
-                        f.properties.abbreviation = row ? row.abbreviation : "";
-                        f.properties.total_jurisdictions = row ? row.total_jurisdictions : null;
-                        f.properties.published_jurisdictions = row ? row.published_jurisdictions : null;
-                        f.properties.percentage = row ? row.percentage : -1;
+                        var s = stateStats[f.properties.id];
+                        var total = s ? s.total : 0;
+                        var published = s ? s.published : 0;
+                        f.properties.total_jurisdictions = total;
+                        f.properties.published_jurisdictions = published;
+                        f.properties.percentage = total ? Math.round((published / total) * 100) : -1;
                         // 0% counts as no coverage, same grey as a state we have nothing for.
-                        f.properties.isCovered = !!row && row.percentage > 0;
+                        f.properties.isCovered = published > 0;
                     });
                     return geojson;
                 }
@@ -585,7 +661,9 @@
                                         ? f.geometry.coordinates
                                         : [f.geometry.coordinates];
                                 var biggest = polys.reduce(function (best, p) {
-                                    return !best || Math.abs(ringArea(p[0])) > Math.abs(ringArea(best[0])) ? p : best;
+                                    return !best || Math.abs(ringArea(p[0])) > Math.abs(ringArea(best[0]))
+                                        ? p
+                                        : best;
                                 }, null);
                                 var pt = biggest && ringCentroid(biggest[0]);
                                 if (!pt) return null;
@@ -599,20 +677,14 @@
                     };
                 }
 
-                function renderRollup(rows) {
-                    var total = 0,
-                        pub = 0;
-                    rows.forEach(function (r) {
-                        total += r.total_jurisdictions || 0;
-                        pub += r.published_jurisdictions || 0;
+                // Drop the road network and every basemap label: our own vector layers
+                // already name the states and jurisdictions.
+                function simplifyBasemap() {
+                    (map.getStyle().layers || []).forEach(function (layer) {
+                        if (layer.type === "symbol" || BASEMAP_DROP.indexOf(layer["source-layer"]) !== -1) {
+                            map.removeLayer(layer.id);
+                        }
                     });
-                    el("lul-rollup").innerHTML =
-                        '<div><div class="lul-rollup-num">' +
-                        fmt(pub) +
-                        '</div><div class="lul-rollup-label">Published</div></div>' +
-                        '<div><div class="lul-rollup-num">' +
-                        fmt(total) +
-                        '</div><div class="lul-rollup-label">Jurisdictions</div></div>';
                 }
 
                 // Keep our fills beneath the basemap's own labels so place names read through.
@@ -624,15 +696,16 @@
                     return undefined;
                 }
 
-                function addLayers(geojson) {
-                    map.addSource("states", { type: "geojson", data: geojson, generateId: true });
-                    var beforeId = firstSymbolLayerId();
+                // ---------- layers ----------
+                function addStateLayers(geojson, beforeId) {
+                    map.addSource("states", { type: "geojson", data: geojson, promoteId: "id" });
 
                     map.addLayer(
                         {
                             id: "states-fill",
                             type: "fill",
                             source: "states",
+                            maxzoom: SWAP_ZOOM,
                             paint: {
                                 "fill-color": [
                                     "case",
@@ -640,16 +713,10 @@
                                     HOVER_FILL,
                                     ["==", ["get", "isCovered"], false],
                                     NO_DATA_FILL,
-                                    STATE_FILL,
+                                    COVERED_FILL,
                                 ],
-                                "fill-opacity": [
-                                    "case",
-                                    ["boolean", ["feature-state", "hover"], false],
-                                    0.9,
-                                    ["boolean", ["feature-state", "selected"], false],
-                                    0.9,
-                                    0.78,
-                                ],
+                                // hold full strength right up to the handoff
+                                "fill-opacity": 0.78,
                             },
                         },
                         beforeId,
@@ -660,6 +727,7 @@
                             id: "states-line",
                             type: "line",
                             source: "states",
+                            maxzoom: SWAP_ZOOM,
                             paint: {
                                 "line-color": [
                                     "case",
@@ -667,7 +735,12 @@
                                     ACCENT,
                                     "rgba(255,255,255,0.9)",
                                 ],
-                                "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, 0.9],
+                                "line-width": [
+                                    "case",
+                                    ["boolean", ["feature-state", "selected"], false],
+                                    3,
+                                    0.9,
+                                ],
                             },
                         },
                         beforeId,
@@ -679,8 +752,9 @@
                         type: "symbol",
                         source: "state-labels",
                         minzoom: 3,
+                        maxzoom: SWAP_ZOOM,
                         layout: {
-                            "text-field": ["get", "abbreviation"],
+                            "text-field": ["get", "postcode"],
                             "text-font": ["Open Sans Bold"],
                             "text-size": 11,
                             "text-letter-spacing": 0.08,
@@ -703,15 +777,137 @@
                             "text-halo-width": 1,
                         },
                     });
-
-                    wireInteraction();
-                    fitToData(geojson);
                 }
 
-                function fitToData(geojson) {
+                function addJurisdictionLayers(beforeId) {
+                    map.addSource("jurisdictions", {
+                        type: "vector",
+                        url: JURISDICTION_TILES,
+                        promoteId: { jurisdictions: "id" },
+                    });
+
+                    map.addLayer(
+                        {
+                            id: "jurisdictions-fill",
+                            type: "fill",
+                            source: "jurisdictions",
+                            "source-layer": "jurisdictions",
+                            minzoom: SWAP_ZOOM,
+                            paint: {
+                                "fill-color": [
+                                    "case",
+                                    [
+                                        "all",
+                                        ["boolean", ["feature-state", "hover"], false],
+                                        ["boolean", ["feature-state", "published"], false],
+                                    ],
+                                    HOVER_FILL,
+                                    ["boolean", ["feature-state", "hover"], false],
+                                    UNPUBLISHED_HOVER,
+                                    ["boolean", ["feature-state", "published"], false],
+                                    COVERED_FILL,
+                                    UNPUBLISHED_FILL,
+                                ],
+                                // short fade so the handoff isn't a hard pop, but nothing
+                                // spends time washed out
+                                "fill-opacity": [
+                                    "interpolate",
+                                    ["linear"],
+                                    ["zoom"],
+                                    SWAP_ZOOM,
+                                    0.62,
+                                    SWAP_ZOOM + 0.25,
+                                    0.8,
+                                ],
+                            },
+                        },
+                        beforeId,
+                    );
+
+                    map.addLayer(
+                        {
+                            id: "jurisdictions-line",
+                            type: "line",
+                            source: "jurisdictions",
+                            "source-layer": "jurisdictions",
+                            minzoom: SWAP_ZOOM,
+                            paint: {
+                                "line-color": [
+                                    "case",
+                                    ["boolean", ["feature-state", "selected"], false],
+                                    ACCENT,
+                                    "rgba(255,255,255,0.75)",
+                                ],
+                                "line-width": [
+                                    "case",
+                                    ["boolean", ["feature-state", "selected"], false],
+                                    2.5,
+                                    0.5,
+                                ],
+                                "line-opacity": [
+                                    "interpolate",
+                                    ["linear"],
+                                    ["zoom"],
+                                    SWAP_ZOOM,
+                                    0.5,
+                                    SWAP_ZOOM + 0.25,
+                                    1,
+                                ],
+                            },
+                        },
+                        beforeId,
+                    );
+
+                    map.addLayer({
+                        id: "jurisdictions-label",
+                        type: "symbol",
+                        source: "jurisdictions",
+                        "source-layer": "jurisdictions",
+                        minzoom: 8.5,
+                        layout: {
+                            "text-field": ["get", "name"],
+                            "text-font": ["Open Sans Bold"],
+                            "text-size": 11,
+                            "text-allow-overlap": false,
+                            "text-padding": 4,
+                        },
+                        paint: {
+                            "text-color": [
+                                "case",
+                                ["boolean", ["feature-state", "published"], false],
+                                "#FFFFFF",
+                                "rgba(57,51,72,0.75)",
+                            ],
+                            "text-halo-color": [
+                                "case",
+                                ["boolean", ["feature-state", "published"], false],
+                                "rgba(57,51,72,0.5)",
+                                "rgba(255,255,255,0.9)",
+                            ],
+                            "text-halo-width": 1,
+                        },
+                    });
+                }
+
+                // Published status lives in the API, not the tiles, so it's applied as
+                // feature state. MapLibre keeps this keyed by id and reapplies it to each
+                // tile as it loads, so it's safe to set before any tile has arrived.
+                function applyPublishedState() {
+                    var n = 0;
+                    Object.keys(jurisdictionById).forEach(function (id) {
+                        if (!jurisdictionById[id].published) return;
+                        map.setFeatureState(
+                            { source: "jurisdictions", sourceLayer: "jurisdictions", id: Number(id) },
+                            { published: true },
+                        );
+                        n++;
+                    });
+                    return n;
+                }
+
+                function fitToStates(geojson) {
                     var b = new maplibregl.LngLatBounds();
                     geojson.features.forEach(function (f) {
-                        if (f.properties.NAME === "Puerto Rico") return;
                         var walk = function (c) {
                             if (typeof c[0] === "number") {
                                 b.extend(c);
@@ -725,26 +921,31 @@
                 }
 
                 // ---------- interaction ----------
-                var hoverId = null;
-                var selectedId = null;
+                var hovered = null; // { source, sourceLayer, id }
+                var selected = null;
                 var tip = el("lul-hovertip");
                 var statbox = el("lul-statbox");
                 var mapEl = el("lul-coverage-map");
 
-                function setHover(id) {
-                    if (hoverId === id) return;
-                    if (hoverId !== null) map.setFeatureState({ source: "states", id: hoverId }, { hover: false });
-                    hoverId = id;
-                    if (hoverId !== null) map.setFeatureState({ source: "states", id: hoverId }, { hover: true });
+                function sameFeature(a, b) {
+                    return a && b && a.source === b.source && a.id === b.id;
                 }
 
-                function showTip(props, point) {
-                    tip.innerHTML =
-                        "<b>" +
-                        (props.abbreviation || props.NAME) +
-                        "</b><div class='lul-hovertip-pct'>" +
-                        (props.percentage >= 0 ? props.percentage + "% published" : "No data") +
-                        "</div>";
+                function setHover(target) {
+                    if (sameFeature(hovered, target)) return;
+                    if (hovered) map.setFeatureState(hovered, { hover: false });
+                    hovered = target;
+                    if (hovered) map.setFeatureState(hovered, { hover: true });
+                }
+
+                function setSelected(target) {
+                    if (selected) map.setFeatureState(selected, { selected: false });
+                    selected = target;
+                    if (selected) map.setFeatureState(selected, { selected: true });
+                }
+
+                function showTip(html, point) {
+                    tip.innerHTML = html;
                     tip.classList.add("is-visible");
                     positionTip(point);
                 }
@@ -752,107 +953,227 @@
                 function positionTip(point) {
                     var w = tip.offsetWidth,
                         h = tip.offsetHeight;
-                    var x = point.x,
-                        y = point.y;
-                    // flip toward the inside of the map near the edges
                     tip.style.transform =
                         "translate(" +
-                        (x + w + 24 > mapEl.clientWidth ? -w - 14 : 14) +
+                        (point.x + w + 24 > mapEl.clientWidth ? -w - 14 : 14) +
                         "px, " +
-                        (y + h + 24 > mapEl.clientHeight ? -h - 14 : 14) +
+                        (point.y + h + 24 > mapEl.clientHeight ? -h - 14 : 14) +
                         "px)";
-                    tip.style.left = x + "px";
-                    tip.style.top = y + "px";
+                    tip.style.left = point.x + "px";
+                    tip.style.top = point.y + "px";
                 }
 
                 function hideTip() {
                     tip.classList.remove("is-visible");
                 }
 
-                function openStatbox(props) {
+                function subUrl(tpl, vars) {
+                    return tpl
+                        .replace("{abbr}", encodeURIComponent(vars.abbr || ""))
+                        .replace("{state}", encodeURIComponent(vars.state || ""))
+                        .replace("{name}", encodeURIComponent(vars.name || ""));
+                }
+
+                function row(label, value) {
+                    return '<div class="lul-statrow"><span>' + label + "</span><b>" + value + "</b></div>";
+                }
+
+                function openBox(opts) {
                     var abbr = el("lul-sb-abbr");
-                    abbr.textContent = props.abbreviation || "";
-                    abbr.style.display = props.abbreviation ? "inline-block" : "none";
-                    el("lul-sb-name").textContent = props.NAME;
-                    var hasData = props.percentage >= 0;
-                    el("lul-sb-pct").innerHTML = hasData
-                        ? props.percentage + "%<small>published</small>"
-                        : "<span style='font-size:15px'>No data reported</span>";
-                    el("lul-sb-bar").style.width = (hasData ? props.percentage : 0) + "%";
-                    el("lul-sb-total").textContent = fmt(props.total_jurisdictions);
-                    el("lul-sb-pub").textContent = fmt(props.published_jurisdictions);
-                    el("lul-sb-rem").textContent = hasData
-                        ? fmt(props.total_jurisdictions - props.published_jurisdictions)
-                        : "—";
-                    var sub = function (tpl) {
-                        return tpl
-                            .replace("{abbr}", encodeURIComponent(props.abbreviation || ""))
-                            .replace("{state}", encodeURIComponent(props.NAME));
-                    };
-                    el("lul-sb-product").href = sub(PRODUCT_URL);
-                    el("lul-sb-contact").href = sub(CONTACT_URL);
+                    abbr.textContent = opts.abbr || "";
+                    abbr.style.display = opts.abbr ? "inline-block" : "none";
+                    el("lul-sb-name").textContent = opts.name;
+                    var headline = el("lul-sb-headline");
+                    headline.innerHTML = opts.headline;
+                    headline.classList.toggle("is-pill", !!opts.pill);
+                    el("lul-sb-barwrap").style.display = opts.bar == null ? "none" : "block";
+                    if (opts.bar != null) el("lul-sb-bar").style.width = opts.bar + "%";
+                    el("lul-sb-rows").innerHTML = opts.rows;
+
+                    [el("lul-sb-product"), el("lul-sb-contact")].forEach(function (btn, i) {
+                        btn.classList.toggle("is-disabled", !!opts.disabled);
+                        if (opts.disabled) {
+                            btn.removeAttribute("href");
+                            btn.setAttribute("aria-disabled", "true");
+                        } else {
+                            btn.href = subUrl(i === 0 ? PRODUCT_URL : CONTACT_URL, opts);
+                            btn.removeAttribute("aria-disabled");
+                        }
+                    });
                     statbox.classList.add("is-open");
                 }
 
-                function closeStatbox() {
+                function closeBox() {
                     statbox.classList.remove("is-open");
-                    if (selectedId !== null) {
-                        map.setFeatureState({ source: "states", id: selectedId }, { selected: false });
-                        selectedId = null;
-                    }
+                    setSelected(null);
                 }
 
-                function wireInteraction() {
-                    map.on("mousemove", "states-fill", function (e) {
+                function stateTip(p) {
+                    return (
+                        "<b>" +
+                        (p.postcode || p.name) +
+                        "</b><div class='lul-hovertip-pct'>" +
+                        p.percentage +
+                        "% published</div>"
+                    );
+                }
+
+                function openStateBox(p) {
+                    openBox({
+                        abbr: p.postcode,
+                        name: p.name,
+                        state: p.name,
+                        headline: p.percentage + "%<small>published</small>",
+                        bar: p.percentage,
+                        rows:
+                            row("Total jurisdictions", fmt(p.total_jurisdictions)) +
+                            row("Published", fmt(p.published_jurisdictions)) +
+                            row("Remaining", fmt(p.total_jurisdictions - p.published_jurisdictions)),
+                    });
+                }
+
+                function jurisdictionTip(p) {
+                    var rec = jurisdictionById[p.id];
+                    var published = !!(rec && rec.published);
+                    return (
+                        "<b>" +
+                        (p.st || "") +
+                        "</b><div class='lul-hovertip-pct'>" +
+                        p.name +
+                        "</div><div class='lul-hovertip-note'>" +
+                        (published ? "Published" : "Not yet published") +
+                        "</div>"
+                    );
+                }
+
+                function openJurisdictionBox(p) {
+                    var rec = jurisdictionById[p.id];
+                    var published = !!(rec && rec.published);
+                    var rows = "";
+                    if (rec) {
+                        rows += row("County", rec.county_name || "—");
+                        rows += row("State", rec.state_name || "—");
+                        if (published) {
+                            rows += row("Zoning districts", fmt(rec.zone_count));
+                            rows += row("Last updated", rec.updated || "—");
+                        }
+                    }
+                    openBox({
+                        abbr: p.st,
+                        name: p.name,
+                        state: rec ? rec.state_name : "",
+                        headline:
+                            '<span class="lul-pill ' +
+                            (published ? "is-published" : "") +
+                            '">' +
+                            (published ? "Published" : "Not yet published") +
+                            "</span>",
+                        pill: true,
+                        bar: null,
+                        rows: rows,
+                        disabled: !published,
+                    });
+                }
+
+                // Which layer is live depends on zoom; min/maxzoom means only one of them
+                // is ever rendered or hit-tested at a time.
+                function wireLayer(layerId, opts) {
+                    map.on("mousemove", layerId, function (e) {
                         if (!e.features.length) return;
                         var f = e.features[0];
-                        // states without coverage are inert: no highlight, no tooltip, no click
-                        if (!f.properties.isCovered) {
+                        if (!opts.interactive(f.properties)) {
                             setHover(null);
                             hideTip();
                             map.getCanvas().style.cursor = "default";
                             return;
                         }
-                        setHover(f.id);
-                        showTip(f.properties, e.point);
+                        setHover({ source: f.source, sourceLayer: f.sourceLayer, id: f.id });
+                        showTip(opts.tip(f.properties), e.point);
                         map.getCanvas().style.cursor = "pointer";
                     });
 
-                    map.on("mouseleave", "states-fill", function () {
+                    map.on("mouseleave", layerId, function () {
                         setHover(null);
                         hideTip();
                         map.getCanvas().style.cursor = "default";
                     });
 
-                    map.on("click", "states-fill", function (e) {
+                    map.on("click", layerId, function (e) {
                         if (!e.features.length) return;
                         var f = e.features[0];
-                        if (!f.properties.isCovered) return;
-                        if (selectedId !== null)
-                            map.setFeatureState({ source: "states", id: selectedId }, { selected: false });
-                        selectedId = f.id;
-                        map.setFeatureState({ source: "states", id: selectedId }, { selected: true });
-                        openStatbox(f.properties);
+                        if (!opts.interactive(f.properties)) return;
+                        setSelected({ source: f.source, sourceLayer: f.sourceLayer, id: f.id });
+                        opts.open(f.properties);
+                    });
+                }
+
+                function wireInteraction() {
+                    wireLayer("states-fill", {
+                        interactive: function (p) {
+                            return p.isCovered !== false;
+                        },
+                        tip: stateTip,
+                        open: openStateBox,
                     });
 
-                    // clicking empty ocean closes the panel
+                    wireLayer("jurisdictions-fill", {
+                        // every jurisdiction is clickable; the box says whether it's published
+                        interactive: function () {
+                            return true;
+                        },
+                        tip: jurisdictionTip,
+                        open: openJurisdictionBox,
+                    });
+
+                    // clicking empty space closes the panel
                     map.on("click", function (e) {
-                        var hits = map.queryRenderedFeatures(e.point, { layers: ["states-fill"] });
-                        if (!hits.length) closeStatbox();
+                        var hits = map.queryRenderedFeatures(e.point, {
+                            layers: ["states-fill", "jurisdictions-fill"].filter(function (l) {
+                                return map.getLayer(l);
+                            }),
+                        });
+                        if (!hits.length) closeBox();
                     });
 
-                    el("lul-statbox-close").addEventListener("click", closeStatbox);
+                    el("lul-statbox-close").addEventListener("click", closeBox);
                     document.addEventListener("keydown", function (e) {
-                        if (e.key === "Escape") closeStatbox();
+                        if (e.key === "Escape") closeBox();
+                    });
+
+                    // legend copy tracks whichever level is on screen
+                    var legendCovered = el("lul-legend-covered");
+                    var legendEmpty = el("lul-legend-empty");
+                    var legendEmptySwatch = el("lul-legend-empty-swatch");
+                    map.on("zoom", function () {
+                        var juris = map.getZoom() >= SWAP_ZOOM;
+                        legendCovered.textContent = juris ? "Published" : "States with data coverage";
+                        legendEmpty.textContent = juris ? "Not yet published" : "No data available";
+                        legendEmptySwatch.style.background = juris ? UNPUBLISHED_FILL : NO_DATA_FILL;
                     });
                 }
 
                 // ---------- load ----------
-                function loadSummary() {
-                    return fetch(SUMMARY_ENDPOINT, { credentials: "omit" }).then(function (r) {
-                        if (!r.ok) throw new Error("HTTP " + r.status);
-                        return r.json();
-                    });
+                var usingSnapshot = false;
+
+                function loadJurisdictionData() {
+                    return fetch(JURISDICTIONS_API, { credentials: "omit" })
+                        .then(function (r) {
+                            if (!r.ok) throw new Error("HTTP " + r.status);
+                            return r.json();
+                        })
+                        .catch(function (err) {
+                            console.warn("Live jurisdiction API unavailable, using snapshot:", err);
+                            return fetch(JURISDICTIONS_SNAPSHOT)
+                                .then(function (r) {
+                                    if (!r.ok) throw new Error("snapshot HTTP " + r.status);
+                                    return r.json();
+                                })
+                                .then(function (rows) {
+                                    usingSnapshot = true;
+                                    setStatus("Live status unavailable — showing a saved snapshot.", false);
+                                    return rows;
+                                });
+                        });
                 }
 
                 map.on("load", function () {
@@ -861,25 +1182,24 @@
                             if (!r.ok) throw new Error("state boundaries: HTTP " + r.status);
                             return r.json();
                         }),
-                        loadSummary().catch(function (err) {
-                            console.error("Coverage summary failed:", err);
-                            return null;
-                        }),
+                        loadJurisdictionData(),
                     ])
                         .then(function (res) {
-                            var geojson = unwrapAntimeridian(res[0]);
+                            var states = res[0];
                             var rows = res[1];
-                            if (!rows) {
-                                setStatus(
-                                    "Couldn't reach the coverage endpoint (network or CORS). Boundaries shown without data.",
-                                    true,
-                                );
-                                rows = [];
-                            } else {
-                                setStatus(null);
-                                renderRollup(rows);
-                            }
-                            addLayers(joinData(geojson, rows));
+
+                            indexJurisdictions(rows);
+                            renderRollup(rows);
+
+                            simplifyBasemap();
+                            var beforeId = firstSymbolLayerId();
+                            addStateLayers(joinStates(states), beforeId);
+                            addJurisdictionLayers(beforeId);
+                            applyPublishedState();
+
+                            wireInteraction();
+                            fitToStates(states);
+                            if (!usingSnapshot) setStatus(null);
                         })
                         .catch(function (err) {
                             console.error(err);
