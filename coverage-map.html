@@ -524,7 +524,18 @@
                 var BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
                 // Zoom at which the state choropleth hands off to individual jurisdictions.
-                var SWAP_ZOOM = 6;
+                var SWAP_ZOOM = 5.5;
+
+                // How many zoom levels the handoff is spread over. Bigger = softer, more
+                // gradual fade; 0 = hard cut with no fade at all. Applies to both sides:
+                // states fade out over [SWAP_ZOOM - FADE, SWAP_ZOOM], jurisdictions fade
+                // in over [SWAP_ZOOM, SWAP_ZOOM + FADE].
+                var FADE = 0.5;
+
+                // Opacity each layer fades to/from at the handoff. Raise these toward the
+                // full values to keep more color through the transition.
+                var STATE_FADE_TO = 0.7;
+                var JURISDICTION_FADE_FROM = 0.5;
 
                 var COVERED_FILL = "#393348";
                 var HOVER_FILL = "#4C4460";
@@ -535,7 +546,14 @@
 
                 // Basemap clutter to drop: roads, rails, bridges, tunnels and their labels
                 // are pure white and fight with the polygons on top.
-                var BASEMAP_DROP = ["transportation", "transportation_name", "aeroway", "building", "housenumber", "poi"];
+                var BASEMAP_DROP = [
+                    "transportation",
+                    "transportation_name",
+                    "aeroway",
+                    "building",
+                    "housenumber",
+                    "poi",
+                ];
 
                 var el = function (id) {
                     return document.getElementById(id);
@@ -661,9 +679,7 @@
                                         ? f.geometry.coordinates
                                         : [f.geometry.coordinates];
                                 var biggest = polys.reduce(function (best, p) {
-                                    return !best || Math.abs(ringArea(p[0])) > Math.abs(ringArea(best[0]))
-                                        ? p
-                                        : best;
+                                    return !best || Math.abs(ringArea(p[0])) > Math.abs(ringArea(best[0])) ? p : best;
                                 }, null);
                                 var pt = biggest && ringCentroid(biggest[0]);
                                 if (!pt) return null;
@@ -715,8 +731,16 @@
                                     NO_DATA_FILL,
                                     COVERED_FILL,
                                 ],
-                                // hold full strength right up to the handoff
-                                "fill-opacity": 0.78,
+                                // ease off approaching the handoff to jurisdictions
+                                "fill-opacity": [
+                                    "interpolate",
+                                    ["linear"],
+                                    ["zoom"],
+                                    SWAP_ZOOM - FADE,
+                                    0.78,
+                                    SWAP_ZOOM,
+                                    STATE_FADE_TO,
+                                ],
                             },
                         },
                         beforeId,
@@ -735,12 +759,7 @@
                                     ACCENT,
                                     "rgba(255,255,255,0.9)",
                                 ],
-                                "line-width": [
-                                    "case",
-                                    ["boolean", ["feature-state", "selected"], false],
-                                    3,
-                                    0.9,
-                                ],
+                                "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, 0.9],
                             },
                         },
                         beforeId,
@@ -808,15 +827,14 @@
                                     COVERED_FILL,
                                     UNPUBLISHED_FILL,
                                 ],
-                                // short fade so the handoff isn't a hard pop, but nothing
-                                // spends time washed out
+                                // fade in as the state fills drop away
                                 "fill-opacity": [
                                     "interpolate",
                                     ["linear"],
                                     ["zoom"],
                                     SWAP_ZOOM,
-                                    0.62,
-                                    SWAP_ZOOM + 0.25,
+                                    JURISDICTION_FADE_FROM,
+                                    SWAP_ZOOM + FADE,
                                     0.8,
                                 ],
                             },
@@ -838,19 +856,14 @@
                                     ACCENT,
                                     "rgba(255,255,255,0.75)",
                                 ],
-                                "line-width": [
-                                    "case",
-                                    ["boolean", ["feature-state", "selected"], false],
-                                    2.5,
-                                    0.5,
-                                ],
+                                "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 2.5, 0.5],
                                 "line-opacity": [
                                     "interpolate",
                                     ["linear"],
                                     ["zoom"],
                                     SWAP_ZOOM,
-                                    0.5,
-                                    SWAP_ZOOM + 0.25,
+                                    0.35,
+                                    SWAP_ZOOM + FADE,
                                     1,
                                 ],
                             },
