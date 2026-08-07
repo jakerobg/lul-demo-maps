@@ -4,6 +4,9 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>National Zoning Atlas — Coverage by State</title>
+        <!-- This page is embedded in an iframe: send every link to the top-level
+             window so navigation replaces the host page, not the map. -->
+        <base target="_top" />
         <style>
             html,
             body {
