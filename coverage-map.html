@@ -23,7 +23,7 @@
                 color: #393348;
                 max-width: 1180px;
                 margin: 0 auto;
-                padding: 28px 20px 40px;
+                padding: 20px 20px 20px;
                 box-sizing: border-box;
             }
             .lul-map-eyebrow {
@@ -38,6 +38,17 @@
                 align-items: flex-end;
                 gap: 12px;
                 flex-wrap: wrap;
+            }
+
+            /* own line under the title, so step out of the eyebrow's uppercase treatment */
+            .lul-map-hint {
+                display: block;
+                font-size: 12px;
+                font-weight: 400;
+                letter-spacing: normal;
+                text-transform: none;
+                color: rgba(57, 51, 72, 0.5);
+                margin-top: 6px;
             }
 
             /* ---- national rollup ---- */
@@ -78,11 +89,6 @@
             }
             #lul-coverage-map canvas {
                 cursor: default;
-            }
-            .lul-map-caption {
-                font-size: 12px;
-                color: rgba(57, 51, 72, 0.5);
-                margin-top: 10px;
             }
 
             /* ---- legend ---- */
@@ -126,6 +132,13 @@
             }
             .lul-legend-swatch.is-nodata {
                 background: #efedec;
+            }
+
+            /* The attribution expands leftward along the bottom edge and would run into
+               the legend. It starts collapsed to the ⓘ (see createMap); this caps how far
+               it can reach even once expanded, so the two can never meet. */
+            #lul-coverage-map .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+                max-width: 55%;
             }
 
             /* ---- hover tooltip that follows the cursor ---- */
@@ -388,7 +401,143 @@
                 width: 12px;
                 height: 12px;
             }
-            /* nothing to buy or ask about for an unpublished jurisdiction */
+            /* ---- unlock dropdown (see button_dropdown.html) ---- */
+            .lul-data-actions {
+                --lul-data-header: #393348;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                color: var(--lul-data-header);
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 18px;
+                flex-wrap: wrap;
+            }
+            .lul-data-actions *,
+            .lul-data-actions *::before,
+            .lul-data-actions *::after {
+                box-sizing: border-box;
+            }
+            .lul-data-actions .lul-data__dropdown {
+                position: relative;
+                display: inline-block;
+            }
+            .lul-data-actions .lul-data__btn {
+                -webkit-appearance: none;
+                appearance: none;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                font-weight: 500;
+                font-size: 1rem;
+                line-height: 1.2;
+                padding: 14px 26px;
+                border-radius: 0;
+                text-decoration: none;
+                letter-spacing: 0.02em;
+                border: 1px solid #393347;
+                cursor: pointer;
+                transition:
+                    background 0.25s ease,
+                    color 0.25s ease,
+                    gap 0.25s ease;
+            }
+            .lul-data-actions .lul-data__btn--primary {
+                background: #393347;
+                color: #ffffff;
+            }
+            .lul-data-actions .lul-data__btn--primary:hover {
+                background: #4c4460;
+                border-color: #4c4460;
+                gap: 12px;
+            }
+            .lul-data-actions .lul-data__btn svg {
+                width: 14px;
+                height: 14px;
+                transition: transform 0.25s ease;
+            }
+            .lul-data-actions .lul-data__dropdown.lul-is-open .lul-data__btn svg {
+                transform: rotate(180deg);
+            }
+            .lul-data-actions .lul-data__menu {
+                position: absolute;
+                top: calc(100% - 1px);
+                left: 0;
+                min-width: 100%;
+                background: #ffffff;
+                border: 1px solid #393347;
+                z-index: 50;
+                display: none;
+                flex-direction: column;
+            }
+            .lul-data-actions .lul-data__dropdown.lul-is-open .lul-data__menu {
+                display: flex;
+            }
+            .lul-data-actions .lul-data__option {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-weight: 500;
+                font-size: 0.95rem;
+                color: #393347;
+                text-decoration: none;
+                white-space: nowrap;
+                padding: 14px 26px;
+                border-bottom: 1px solid rgba(57, 51, 71, 0.15);
+                transition:
+                    background 0.2s ease,
+                    color 0.2s ease;
+            }
+            .lul-data-actions .lul-data__option:last-child {
+                border-bottom: none;
+            }
+            .lul-data-actions .lul-data__option:hover {
+                background: #393347;
+                color: #ffffff;
+            }
+
+            /* compact + full-width inside the map panel */
+            .lul-statbox-unlock {
+                margin-top: 16px;
+            }
+            .lul-statbox-unlock .lul-data__dropdown {
+                display: block;
+                width: 100%;
+            }
+            .lul-statbox-unlock .lul-data__btn {
+                width: 100%;
+                font-size: 0.8125rem;
+                padding: 11px 14px;
+                gap: 7px;
+            }
+            .lul-statbox-unlock .lul-data__option {
+                font-size: 0.8125rem;
+                padding: 10px 14px;
+                white-space: normal;
+            }
+            .lul-statbox-unlock .lul-data__btn.is-disabled,
+            .lul-statbox-unlock .lul-data__btn.is-disabled:hover {
+                pointer-events: none;
+                cursor: default;
+                background: #efedec;
+                border-color: rgba(57, 51, 72, 0.12);
+                color: rgba(57, 51, 72, 0.35);
+                gap: 7px;
+            }
+
+            /* the line between the dropdown and the two buttons */
+            .lul-statbox-prompt {
+                font-size: 11px;
+                line-height: 1.35;
+                color: rgba(57, 51, 72, 0.55);
+                margin: 12px 0 8px;
+            }
+            .lul-statbox-prompt.is-unpublished {
+                color: rgba(57, 51, 72, 0.7);
+            }
+
+            /* nothing to buy for an unpublished jurisdiction */
             .lul-hero-actions .lul-hero__btn.is-disabled,
             .lul-hero-actions .lul-hero__btn.is-disabled:hover {
                 pointer-events: none;
@@ -423,9 +572,6 @@
             }
 
             @media (max-width: 700px) {
-                #lul-coverage-map {
-                    height: 460px;
-                }
                 .lul-statbox {
                     width: auto;
                     left: 12px;
@@ -441,7 +587,10 @@
 
         <section class="lul-coverage">
             <div class="lul-map-eyebrow">
-                <div>Land Use Labs Data Coverage</div>
+                <div>
+                    Land Use Labs Data Coverage
+                    <span class="lul-map-hint">Zoom in and click a state or jurisdiction to learn more</span>
+                </div>
                 <div class="lul-rollup" id="lul-rollup"></div>
             </div>
 
@@ -472,6 +621,42 @@
                         <i id="lul-sb-bar"></i>
                     </div>
                     <div id="lul-sb-rows"></div>
+
+                    <div class="lul-statbox-unlock lul-data-actions">
+                        <div class="lul-data__dropdown" id="lul-sb-dropdown">
+                            <a
+                                href="#"
+                                role="button"
+                                class="lul-data__btn lul-data__btn--primary lul-data__toggle"
+                                id="lul-sb-unlock"
+                            >
+                                Unlock Data for this Geography
+                                <svg
+                                    viewBox="0 0 20 20"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="M5 8l5 5 5-5"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </svg>
+                            </a>
+                            <div class="lul-data__menu">
+                                <a class="lul-data__option" href="/slices#order">Slices</a>
+                                <a class="lul-data__option" href="/districts#order">Districts</a>
+                                <a class="lul-data__option" href="/rasters#order">Rasters</a>
+                                <a class="lul-data__option" href="/tables#order">Tables</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lul-statbox-prompt" id="lul-sb-prompt">Not sure what product is right?</div>
+
                     <div class="lul-statbox-actions lul-hero-actions">
                         <a class="lul-hero__btn lul-hero__btn--primary" id="lul-sb-product" href="/product-selection"
                             >Find Product
@@ -500,8 +685,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="lul-map-caption">Percent of jurisdictions with purchasable data. Click a state for detail.</div>
         </section>
 
         <script>
@@ -516,12 +699,38 @@
                 // Geometry, built by build_coverage_data.py. Rerun that when boundaries change.
                 var STATES_GEOJSON = "data/states.geojson";
                 var JURISDICTION_TILES = "pmtiles://data/jurisdictions.pmtiles";
+                // One label anchor per jurisdiction, so multi-part ones aren't named twice.
+                var JURISDICTION_LABEL_TILES = "pmtiles://data/jurisdiction_labels.pmtiles";
 
                 // Destination for the two panel buttons. {abbr} / {state} / {name} are substituted.
                 var PRODUCT_URL = "/product-selection?state={abbr}";
                 var CONTACT_URL = "/contact?state={abbr}";
 
-                var BASEMAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+                // Basemaps. Switch by changing BASEMAP. Each entry names the schema-specific
+                // bits our own layers need to agree with: which source-layers to strip, and a
+                // font the style's glyph endpoint actually serves.
+                var BASEMAPS = {
+                    nza: {
+                        style: "https://nzabasemap.blob.core.windows.net/nzabasemap/map_style_2025_11_03.json",
+                        // The published style still points at the dead tiles.zoningatlas1.org
+                        // host; rewrite the source to the working one at load time. Harmless
+                        // once the style itself is corrected.
+                        tiles: "https://tiles.zoningatlas.org/nza_merged",
+                        staleTileHost: "tiles.zoningatlas1.org",
+                        // protomaps schema
+                        drop: ["roads", "transit_stations"],
+                        font: "Montserrat SemiBold",
+                        attribution: "Basemap: National Zoning Atlas",
+                    },
+                    carto: {
+                        style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+                        // openmaptiles schema
+                        drop: ["transportation", "transportation_name", "aeroway", "building", "housenumber", "poi"],
+                        font: "Open Sans Bold",
+                        attribution: "Boundaries: Land Use Labs",
+                    },
+                };
+                var BASEMAP = BASEMAPS.nza;
 
                 // Zoom at which the state choropleth hands off to individual jurisdictions.
                 var SWAP_ZOOM = 5.5;
@@ -544,17 +753,6 @@
                 var UNPUBLISHED_HOVER = "#BFBCB9";
                 var ACCENT = "#C9D0A0";
 
-                // Basemap clutter to drop: roads, rails, bridges, tunnels and their labels
-                // are pure white and fight with the polygons on top.
-                var BASEMAP_DROP = [
-                    "transportation",
-                    "transportation_name",
-                    "aeroway",
-                    "building",
-                    "housenumber",
-                    "poi",
-                ];
-
                 var el = function (id) {
                     return document.getElementById(id);
                 };
@@ -568,27 +766,66 @@
                 var pmtilesProtocol = new pmtiles.Protocol();
                 maplibregl.addProtocol("pmtiles", pmtilesProtocol.tilev4 || pmtilesProtocol.tile);
 
-                var map = new maplibregl.Map({
-                    container: "lul-coverage-map",
-                    style: BASEMAP_STYLE,
-                    center: [-96, 38],
-                    zoom: 3.2,
-                    minZoom: 2,
-                    maxZoom: 13,
-                    attributionControl: false,
-                    dragRotate: false,
-                    pitchWithRotate: false,
-                    touchZoomRotate: true,
-                });
-                map.touchZoomRotate.disableRotation();
-                map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
-                map.addControl(
-                    new maplibregl.AttributionControl({
-                        compact: true,
-                        customAttribution: "Boundaries: Land Use Labs",
-                    }),
-                    "bottom-right",
-                );
+                var map;
+
+                // Fetch the style so the stale tile host baked into it can be corrected
+                // before MapLibre ever sees it. Falls back to the plain URL if that fails.
+                function resolveStyle() {
+                    if (!BASEMAP.staleTileHost) return Promise.resolve(BASEMAP.style);
+                    return fetch(BASEMAP.style)
+                        .then(function (r) {
+                            if (!r.ok) throw new Error("style HTTP " + r.status);
+                            return r.json();
+                        })
+                        .then(function (style) {
+                            Object.keys(style.sources || {}).forEach(function (key) {
+                                var src = style.sources[key];
+                                if (src.url && src.url.indexOf(BASEMAP.staleTileHost) !== -1) {
+                                    src.url = BASEMAP.tiles;
+                                }
+                            });
+                            return style;
+                        })
+                        .catch(function (err) {
+                            console.warn("Could not patch basemap style, using it as-is:", err);
+                            return BASEMAP.style;
+                        });
+                }
+
+                function createMap(style) {
+                    map = new maplibregl.Map({
+                        container: "lul-coverage-map",
+                        style: style,
+                        center: [-96, 38],
+                        zoom: 3.2,
+                        minZoom: 2,
+                        maxZoom: 13,
+                        attributionControl: false,
+                        dragRotate: false,
+                        pitchWithRotate: false,
+                        touchZoomRotate: true,
+                    });
+                    map.touchZoomRotate.disableRotation();
+                    // controls stack in the order they're added
+                    map.addControl(
+                        new maplibregl.AttributionControl({
+                            compact: true,
+                            customAttribution: BASEMAP.attribution,
+                        }),
+                        "bottom-right",
+                    );
+                    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+
+                    // Start the attribution collapsed to the ⓘ so its text doesn't run
+                    // across the bottom into the legend. Click still reveals the credits.
+                    var attrib = map.getContainer().querySelector(".maplibregl-ctrl-attrib");
+                    if (attrib) attrib.classList.remove("maplibregl-compact-show");
+
+                    map.on("error", function (e) {
+                        console.error("map error:", e && e.error ? e.error.message : e);
+                    });
+                    return map;
+                }
 
                 var status = el("lul-status");
                 function setStatus(msg, isError) {
@@ -624,11 +861,11 @@
                     });
                     el("lul-rollup").innerHTML =
                         '<div><div class="lul-rollup-num">' +
-                        fmt(pub) +
-                        '</div><div class="lul-rollup-label">Published</div></div>' +
-                        '<div><div class="lul-rollup-num">' +
                         fmt(rows.length) +
-                        '</div><div class="lul-rollup-label">Jurisdictions</div></div>';
+                        '</div><div class="lul-rollup-label">Total Jurisdictions</div></div>' +
+                        '<div><div class="lul-rollup-num">' +
+                        fmt(pub) +
+                        '</div><div class="lul-rollup-label">Published</div></div>';
                 }
 
                 // Stamp the per-state rollups onto the state polygons so the paint
@@ -697,7 +934,7 @@
                 // already name the states and jurisdictions.
                 function simplifyBasemap() {
                     (map.getStyle().layers || []).forEach(function (layer) {
-                        if (layer.type === "symbol" || BASEMAP_DROP.indexOf(layer["source-layer"]) !== -1) {
+                        if (layer.type === "symbol" || BASEMAP.drop.indexOf(layer["source-layer"]) !== -1) {
                             map.removeLayer(layer.id);
                         }
                     });
@@ -774,7 +1011,7 @@
                         maxzoom: SWAP_ZOOM,
                         layout: {
                             "text-field": ["get", "postcode"],
-                            "text-font": ["Open Sans Bold"],
+                            "text-font": [BASEMAP.font],
                             "text-size": 11,
                             "text-letter-spacing": 0.08,
                             "text-allow-overlap": false,
@@ -871,15 +1108,20 @@
                         beforeId,
                     );
 
+                    map.addSource("jurisdiction-labels", {
+                        type: "vector",
+                        url: JURISDICTION_LABEL_TILES,
+                        promoteId: { jurisdiction_labels: "id" },
+                    });
                     map.addLayer({
                         id: "jurisdictions-label",
                         type: "symbol",
-                        source: "jurisdictions",
-                        "source-layer": "jurisdictions",
+                        source: "jurisdiction-labels",
+                        "source-layer": "jurisdiction_labels",
                         minzoom: 8.5,
                         layout: {
                             "text-field": ["get", "name"],
-                            "text-font": ["Open Sans Bold"],
+                            "text-font": [BASEMAP.font],
                             "text-size": 11,
                             "text-allow-overlap": false,
                             "text-padding": 4,
@@ -905,14 +1147,22 @@
                 // Published status lives in the API, not the tiles, so it's applied as
                 // feature state. MapLibre keeps this keyed by id and reapplies it to each
                 // tile as it loads, so it's safe to set before any tile has arrived.
+                // Feature state is per-source, so the label tiles need it too or every
+                // label would fall through to the unpublished styling.
                 function applyPublishedState() {
+                    var targets = [
+                        { source: "jurisdictions", sourceLayer: "jurisdictions" },
+                        { source: "jurisdiction-labels", sourceLayer: "jurisdiction_labels" },
+                    ];
                     var n = 0;
                     Object.keys(jurisdictionById).forEach(function (id) {
                         if (!jurisdictionById[id].published) return;
-                        map.setFeatureState(
-                            { source: "jurisdictions", sourceLayer: "jurisdictions", id: Number(id) },
-                            { published: true },
-                        );
+                        targets.forEach(function (t) {
+                            map.setFeatureState(
+                                { source: t.source, sourceLayer: t.sourceLayer, id: Number(id) },
+                                { published: true },
+                            );
+                        });
                         n++;
                     });
                     return n;
@@ -991,6 +1241,25 @@
                     return '<div class="lul-statrow"><span>' + label + "</span><b>" + value + "</b></div>";
                 }
 
+                var PROMPT_DEFAULT = "Not sure what product is right?";
+                var PROMPT_UNPUBLISHED = "This data is unpublished. Check back or contact us for questions.";
+
+                function closeDropdown() {
+                    el("lul-sb-dropdown").classList.remove("lul-is-open");
+                }
+
+                function wireDropdown() {
+                    var dd = el("lul-sb-dropdown");
+                    el("lul-sb-unlock").addEventListener("click", function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dd.classList.toggle("lul-is-open");
+                    });
+                    document.addEventListener("click", function (e) {
+                        if (!dd.contains(e.target)) closeDropdown();
+                    });
+                }
+
                 function openBox(opts) {
                     var abbr = el("lul-sb-abbr");
                     abbr.textContent = opts.abbr || "";
@@ -1003,20 +1272,37 @@
                     if (opts.bar != null) el("lul-sb-bar").style.width = opts.bar + "%";
                     el("lul-sb-rows").innerHTML = opts.rows;
 
-                    [el("lul-sb-product"), el("lul-sb-contact")].forEach(function (btn, i) {
-                        btn.classList.toggle("is-disabled", !!opts.disabled);
-                        if (opts.disabled) {
-                            btn.removeAttribute("href");
-                            btn.setAttribute("aria-disabled", "true");
-                        } else {
-                            btn.href = subUrl(i === 0 ? PRODUCT_URL : CONTACT_URL, opts);
-                            btn.removeAttribute("aria-disabled");
-                        }
-                    });
+                    var unpublished = !!opts.unpublished;
+
+                    var prompt = el("lul-sb-prompt");
+                    prompt.textContent = unpublished ? PROMPT_UNPUBLISHED : PROMPT_DEFAULT;
+                    prompt.classList.toggle("is-unpublished", unpublished);
+
+                    // nothing to unlock for an unpublished jurisdiction
+                    closeDropdown();
+                    el("lul-sb-unlock").classList.toggle("is-disabled", unpublished);
+
+                    // Find Product is dead when unpublished; Contact keeps its normal
+                    // styling, since it stays a live link.
+                    var product = el("lul-sb-product");
+                    product.classList.toggle("is-disabled", unpublished);
+                    if (unpublished) {
+                        product.removeAttribute("href");
+                        product.setAttribute("aria-disabled", "true");
+                    } else {
+                        product.href = subUrl(PRODUCT_URL, opts);
+                        product.removeAttribute("aria-disabled");
+                    }
+
+                    var contact = el("lul-sb-contact");
+                    contact.href = subUrl(CONTACT_URL, opts);
+                    contact.removeAttribute("aria-disabled");
+
                     statbox.classList.add("is-open");
                 }
 
                 function closeBox() {
+                    closeDropdown();
                     statbox.classList.remove("is-open");
                     setSelected(null);
                 }
@@ -1084,7 +1370,7 @@
                         pill: true,
                         bar: null,
                         rows: rows,
-                        disabled: !published,
+                        unpublished: !published,
                     });
                 }
 
@@ -1148,6 +1434,7 @@
                         if (!hits.length) closeBox();
                     });
 
+                    wireDropdown();
                     el("lul-statbox-close").addEventListener("click", closeBox);
                     document.addEventListener("keydown", function (e) {
                         if (e.key === "Escape") closeBox();
@@ -1189,7 +1476,7 @@
                         });
                 }
 
-                map.on("load", function () {
+                function onMapLoad() {
                     Promise.all([
                         fetch(STATES_GEOJSON).then(function (r) {
                             if (!r.ok) throw new Error("state boundaries: HTTP " + r.status);
@@ -1218,6 +1505,10 @@
                             console.error(err);
                             setStatus("Failed to load the map: " + err.message, true);
                         });
+                }
+
+                resolveStyle().then(function (style) {
+                    createMap(style).on("load", onMapLoad);
                 });
             })();
         </script>

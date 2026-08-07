@@ -150,6 +150,71 @@ def dump_jurisdictions(conn, path):
     return count
 
 
+# One anchor per jurisdiction. Without this MapLibre labels every part of a
+# MultiPolygon separately, and 17.7% of jurisdictions are multi-part (Jefferson
+# County alone has 1,078 pieces). PointOnSurface rather than Centroid so the
+# anchor is guaranteed to land inside an irregular shape.
+LABEL_SQL = """
+    select j.id, j.name, s.postcode,
+           st_asgeojson(st_transform(st_pointonsurface(big.geom), 4326), 5)
+    from website_jurisdiction j
+    join website_county c on c.id = j.county_id
+    join website_state s on s.id = c.state_id
+    cross join lateral (
+        select (d).geom as geom
+        from st_dump(j.geom_merc) d
+        order by st_area((d).geom) desc
+        limit 1
+    ) big
+    where j.geom_merc is not null
+"""
+
+# Labels only render from LABEL_MIN_ZOOM up, so don't tile them below that.
+LABEL_MIN_ZOOM = 8
+
+
+def build_labels(conn):
+    out = os.path.join(OUT_DIR, "jurisdiction_labels.pmtiles")
+    fd, tmp = tempfile.mkstemp(suffix=".geojsonl")
+    os.close(fd)
+    try:
+        count = 0
+        with conn.cursor("labels") as cur, open(tmp, "w") as fh:
+            cur.itersize = 1000
+            cur.execute(LABEL_SQL)
+            for jid, name, postcode, geom in cur:
+                fh.write(
+                    json.dumps(
+                        {
+                            "type": "Feature",
+                            "properties": {"id": jid, "name": name, "st": postcode},
+                            "geometry": json.loads(geom),
+                        },
+                        separators=(",", ":"),
+                    )
+                )
+                fh.write("\n")
+                count += 1
+        print(f"  streamed {count} label points, tiling...")
+        subprocess.run(
+            [
+                "tippecanoe",
+                "-o", out,
+                "--force",
+                "--layer=jurisdiction_labels",
+                f"--minimum-zoom={LABEL_MIN_ZOOM}",
+                f"--maximum-zoom={MAX_ZOOM}",
+                "--no-feature-limit",
+                "--no-tile-size-limit",
+                tmp,
+            ],
+            check=True,
+        )
+        print(f"  jurisdiction_labels.pmtiles: {os.path.getsize(out) / 1e6:.1f} MB")
+    finally:
+        os.unlink(tmp)
+
+
 def build_jurisdictions(conn):
     out = os.path.join(OUT_DIR, "jurisdictions.pmtiles")
     fd, tmp = tempfile.mkstemp(suffix=".geojsonl")
@@ -189,6 +254,9 @@ def main():
     if only in (None, "jurisdictions"):
         print("Building jurisdictions...")
         build_jurisdictions(conn)
+    if only in (None, "jurisdictions", "labels"):
+        print("Building jurisdiction labels...")
+        build_labels(conn)
     conn.close()
     print("Done.")
 
