@@ -330,7 +330,6 @@
                 display: flex;
                 gap: 8px;
                 margin-top: 14px;
-                --lul-btn-pad: 9px 12px;
             }
 
             /* ---- buttons: shared system (see BUTTONS_PRIMARY_SECONDARY.html
@@ -479,7 +478,10 @@
             .lul-statbox-unlock .lul-data__btn {
                 width: 100%;
             }
+            /* Two classes so this beats .lul-data-actions' own --lul-btn-pad regardless
+               of source order — with the full 10px 26px the pair overflows the panel. */
             .lul-statbox-actions.lul-data-actions {
+                --lul-btn-pad: 9px 12px;
                 gap: 8px;
                 flex-wrap: nowrap;
             }
@@ -488,7 +490,7 @@
                 white-space: nowrap;
             }
             /* one smaller type scale + padding for everything inside the panel */
-            .lul-statbox-unlock {
+            .lul-statbox-unlock.lul-data-actions {
                 --lul-btn-pad: 9px 12px;
             }
             .lul-statbox-unlock .lul-data__btn,
