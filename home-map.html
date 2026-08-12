@@ -29,15 +29,16 @@
             /* ---- tabs, centered above the map ---- */
             .lul-homemap-tabs {
                 --lulhm-ink: #393347;
-                --lulhm-primary: #594496;
-                --lulhm-primary-hover: #3f2e70;
+                /* the active tab uses the original ink purple, not the button system's */
+                --lulhm-primary: #393347;
+                --lulhm-primary-hover: #4c4460;
                 --lulhm-secondary-hover: #f9f9f9;
                 --lulhm-tab-pad: 10px 26px;
 
-                /* floating over the top of the map, centered. Leaflet's own panes sit
+                /* floating over the bottom of the map, centered. Leaflet's own panes sit
                    at z-index 400-700 and its controls at 800+, so stay above both. */
                 position: absolute;
-                top: 12px;
+                bottom: 12px;
                 left: 50%;
                 transform: translateX(-50%);
                 z-index: 900;
@@ -91,7 +92,9 @@
             }
             #lul-homemap__canvas {
                 width: 100%;
-                height: 580px;
+                height: 700px;
+                /* border inside the height so the iframe height matches exactly */
+                box-sizing: border-box;
                 border-radius: 4px;
                 border: 1px solid rgba(57, 51, 72, 0.15);
             }
@@ -106,12 +109,9 @@
                 border-radius: 0 !important;
             }
 
-            /* ---- floating caption, bottom left ---- */
+            /* ---- floating caption: a Leaflet control in the top-left, so the zoom
+                   buttons stack underneath it automatically ---- */
             .lul-homemap__caption {
-                position: absolute;
-                left: 12px;
-                bottom: 12px;
-                z-index: 500;
                 max-width: 420px;
                 background: #fff;
                 border: 1px solid rgba(57, 51, 72, 0.12);
@@ -237,10 +237,6 @@
                     </button>
                     <button class="lul-homemap__tab" data-key="districts" type="button">Explore Districts</button>
                 </div>
-                <div class="lul-homemap__caption">
-                    <b>Lafayette, CO Sample</b><span class="lul-homemap__caption-sep">&bull;</span
-                    ><span id="lul-homemap__caption-text"></span>
-                </div>
             </div>
         </div>
 
@@ -248,7 +244,10 @@
             (function () {
                 var LAYERS = {
                     slices: {
-                        file: "lafayette_co_slices_sample.geojson",
+                        file: "data/lafayette_slices.geojson",
+                        // Baked in: the trimmed file no longer carries every variable,
+                        // so this can't be counted at runtime. See build_sample_geojson.py.
+                        variableCount: 184,
                         caption:
                             "Each color is a unique Slice — a distinct combination of base and overlay districts. " +
                             "Click any polygon to see its governing rules.",
@@ -257,7 +256,8 @@
                         showName: false,
                     },
                     districts: {
-                        file: "lafayette_co_districts_sample.geojson",
+                        file: "data/lafayette_districts.geojson",
+                        variableCount: 194,
                         caption:
                             "Each color is a distinct zoning district. Click any polygon to see its governing rules.",
                         orderUrl: "/districts",
@@ -274,7 +274,7 @@
                 var map = L.map("lul-homemap__canvas", {
                     center: [39.991, -105.1064],
                     zoom: 13,
-                    zoomControl: true,
+                    zoomControl: false,
                     scrollWheelZoom: true,
                     keyboard: false,
                 });
@@ -285,6 +285,21 @@
                     subdomains: "abcd",
                     maxZoom: 19,
                 }).addTo(map);
+
+                // Added before the zoom control so Leaflet stacks it first in the corner.
+                var captionCtl = L.control({ position: "topleft" });
+                captionCtl.onAdd = function () {
+                    var div = L.DomUtil.create("div", "lul-homemap__caption");
+                    div.innerHTML =
+                        "<b>Lafayette, CO Sample</b>" +
+                        '<span class="lul-homemap__caption-sep">&bull;</span>' +
+                        '<span id="lul-homemap__caption-text"></span>';
+                    L.DomEvent.disableClickPropagation(div);
+                    return div;
+                };
+                captionCtl.addTo(map);
+
+                L.control.zoom({ position: "topleft" }).addTo(map);
 
                 var opacityCtl = L.control({ position: "topright" });
                 opacityCtl.onAdd = function () {
@@ -327,11 +342,6 @@
                     return t.charAt(0).toUpperCase() + t.slice(1);
                 }
 
-                // Counted off the feature itself so the number can't go stale.
-                function variableCount(props) {
-                    return Object.keys(props).length;
-                }
-
                 function row(label, value) {
                     return (
                         '<div class="lul-homemap__popup-row"><span>' + label + "</span><span>" + value + "</span></div>"
@@ -360,8 +370,8 @@
                         "</div>" +
                         '<a class="lul-homemap__popup-unlock" href="' +
                         cfg.orderUrl +
-                        '">Want all ' +
-                        variableCount(p) +
+                        '" target="_blank" rel="noopener">Want all ' +
+                        cfg.variableCount +
                         " variables? Order now &rarr;</a>" +
                         "</div>";
                     return html;
