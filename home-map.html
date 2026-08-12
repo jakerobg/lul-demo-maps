@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Zoning Sample Map - Lafayette, CO</title>
+        <!-- Embedded in an iframe: send links to the top-level window. -->
+        <base target="_top" />
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+        <style>
+            /* Class names are scoped to this map (lul-homemap-*) so embedding it in a
+               Squarespace page can't collide with standalone buttons or the other maps. */
+            .lul-homemap {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            }
+
+            /* ---- tabs, centered above the map ---- */
+            .lul-homemap-tabs {
+                --lulhm-ink: #393347;
+                --lulhm-primary: #594496;
+                --lulhm-primary-hover: #3f2e70;
+                --lulhm-secondary-hover: #f9f9f9;
+                --lulhm-tab-pad: 10px 26px;
+
+                /* floating over the top of the map, centered. Leaflet's own panes sit
+                   at z-index 400-700 and its controls at 800+, so stay above both. */
+                position: absolute;
+                top: 12px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 900;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 18px;
+                flex-wrap: wrap;
+            }
+            .lul-homemap-tabs .lul-homemap__tab {
+                -webkit-appearance: none;
+                appearance: none;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 500;
+                font-size: 1rem;
+                line-height: 1.2;
+                padding: var(--lulhm-tab-pad);
+                border: 1px solid transparent;
+                border-radius: 0;
+                letter-spacing: 0.02em;
+                cursor: pointer;
+                background: #ffffff;
+                border-color: var(--lulhm-ink);
+                color: var(--lulhm-ink);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+                transition:
+                    background 0.25s ease,
+                    border-color 0.25s ease,
+                    color 0.25s ease;
+            }
+            .lul-homemap-tabs .lul-homemap__tab:hover {
+                background: var(--lulhm-secondary-hover);
+            }
+            .lul-homemap-tabs .lul-homemap__tab.lulhm-is-active {
+                background: var(--lulhm-primary);
+                border-color: var(--lulhm-primary);
+                color: #ffffff;
+            }
+            .lul-homemap-tabs .lul-homemap__tab.lulhm-is-active:hover {
+                background: var(--lulhm-primary-hover);
+                border-color: var(--lulhm-primary-hover);
+            }
+
+            /* ---- map shell ---- */
+            .lul-homemap__shell {
+                position: relative;
+            }
+            #lul-homemap__canvas {
+                width: 100%;
+                height: 580px;
+                border-radius: 4px;
+                border: 1px solid rgba(57, 51, 72, 0.15);
+            }
+
+            /* square controls, consistent across all the maps */
+            .leaflet-bar,
+            .leaflet-bar a,
+            .leaflet-bar a:first-child,
+            .leaflet-bar a:last-child,
+            .leaflet-control-zoom-in,
+            .leaflet-control-zoom-out {
+                border-radius: 0 !important;
+            }
+
+            /* ---- floating caption, bottom left ---- */
+            .lul-homemap__caption {
+                position: absolute;
+                left: 12px;
+                bottom: 12px;
+                z-index: 500;
+                max-width: 420px;
+                background: #fff;
+                border: 1px solid rgba(57, 51, 72, 0.12);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+                padding: 10px 14px;
+                font-size: 12px;
+                line-height: 1.45;
+                color: rgba(57, 51, 72, 0.6);
+            }
+            .lul-homemap__caption b {
+                font-weight: 700;
+                color: #393348;
+            }
+            .lul-homemap__caption-sep {
+                margin: 0 6px;
+                color: rgba(57, 51, 72, 0.4);
+            }
+
+            /* ---- opacity control ---- */
+            .lul-homemap__opacity {
+                background: #fff;
+                padding: 6px 10px;
+                border-radius: 0;
+                border: 1px solid rgba(57, 51, 72, 0.12);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .lul-homemap__opacity-label {
+                font-size: 9.5px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.5);
+            }
+            .lul-homemap__opacity input[type="range"] {
+                width: 80px;
+                cursor: pointer;
+                accent-color: #393348;
+            }
+
+            /* ---- popup ---- */
+            .leaflet-popup-content-wrapper {
+                border-radius: 4px !important;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+                padding: 0 !important;
+            }
+            .leaflet-popup-content {
+                margin: 0 !important;
+                width: auto !important;
+            }
+            .lul-homemap__popup {
+                padding: 14px 16px;
+                min-width: 214px;
+            }
+            .lul-homemap__popup-name {
+                font-size: 14px;
+                font-weight: 700;
+                color: #393348;
+                margin-bottom: 4px;
+            }
+            .lul-homemap__popup-type {
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.5);
+                margin-bottom: 10px;
+            }
+            .lul-homemap__popup-row {
+                display: flex;
+                justify-content: space-between;
+                gap: 16px;
+                font-size: 12px;
+                color: rgba(57, 51, 72, 0.6);
+                margin-bottom: 3px;
+            }
+            .lul-homemap__popup-row span:last-child {
+                font-weight: 600;
+                color: #393348;
+                text-align: right;
+            }
+            .lul-homemap__popup-divider {
+                border: none;
+                border-top: 1px solid rgba(57, 51, 72, 0.1);
+                margin: 8px 0;
+            }
+
+            /* Teaser: a blurred row standing in for the variables not shown, then the
+               unlock link. The blurred row is decorative — hidden from screen readers. */
+            .lul-homemap__popup-blur {
+                filter: blur(3.5px);
+                opacity: 0.55;
+                user-select: none;
+                pointer-events: none;
+                margin-bottom: 2px;
+            }
+            .lul-homemap__popup-unlock {
+                display: block;
+                margin-top: 8px;
+                font-size: 11.5px;
+                font-weight: 700;
+                color: #594496;
+                text-decoration: none;
+                letter-spacing: 0.01em;
+            }
+            .lul-homemap__popup-unlock:hover {
+                color: #3f2e70;
+                text-decoration: underline;
+            }
+        </style>
+
+        <div class="lul-homemap">
+            <div class="lul-homemap__shell">
+                <div id="lul-homemap__canvas"></div>
+
+                <div class="lul-homemap-tabs">
+                    <button class="lul-homemap__tab lulhm-is-active" data-key="slices" type="button">
+                        Explore Slices
+                    </button>
+                    <button class="lul-homemap__tab" data-key="districts" type="button">Explore Districts</button>
+                </div>
+                <div class="lul-homemap__caption">
+                    <b>Lafayette, CO Sample</b><span class="lul-homemap__caption-sep">&bull;</span
+                    ><span id="lul-homemap__caption-text"></span>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                var LAYERS = {
+                    slices: {
+                        file: "lafayette_co_slices_sample.geojson",
+                        caption:
+                            "Each color is a unique Slice — a distinct combination of base and overlay districts. " +
+                            "Click any polygon to see its governing rules.",
+                        orderUrl: "/slices",
+                        colorBy: "slice_id",
+                        showName: false,
+                    },
+                    districts: {
+                        file: "lafayette_co_districts_sample.geojson",
+                        caption:
+                            "Each color is a distinct zoning district. Click any polygon to see its governing rules.",
+                        orderUrl: "/districts",
+                        colorBy: "name",
+                        showName: true,
+                    },
+                };
+
+                var currentKey = "slices";
+                var currentOpacity = 0.6;
+                var layers = {}; // key -> L.geoJSON
+                var cache = {}; // key -> geojson
+
+                var map = L.map("lul-homemap__canvas", {
+                    center: [39.991, -105.1064],
+                    zoom: 13,
+                    zoomControl: true,
+                    scrollWheelZoom: true,
+                    keyboard: false,
+                });
+
+                L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+                    attribution:
+                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+                    subdomains: "abcd",
+                    maxZoom: 19,
+                }).addTo(map);
+
+                var opacityCtl = L.control({ position: "topright" });
+                opacityCtl.onAdd = function () {
+                    var div = L.DomUtil.create("div", "lul-homemap__opacity");
+                    div.innerHTML =
+                        '<span class="lul-homemap__opacity-label">Opacity</span>' +
+                        '<input type="range" min="0" max="1" step="0.05" value="' +
+                        currentOpacity +
+                        '" />';
+                    L.DomEvent.disableClickPropagation(div);
+                    L.DomEvent.disableScrollPropagation(div);
+                    div.querySelector("input").addEventListener("input", function () {
+                        currentOpacity = parseFloat(this.value);
+                        var active = layers[currentKey];
+                        if (active) active.setStyle({ fillOpacity: currentOpacity });
+                    });
+                    return div;
+                };
+                opacityCtl.addTo(map);
+
+                // Golden-angle hue stepping so adjacent polygons never share a color.
+                // Each layer keeps its own index, so switching tabs is stable.
+                var colorIndex = { slices: {}, districts: {} };
+
+                function colorFor(key, id) {
+                    var idx = colorIndex[key];
+                    if (!(id in idx)) idx[id] = Object.keys(idx).length;
+                    return "hsl(" + Math.round((idx[id] * 137.508) % 360) + ",42%,58%)";
+                }
+
+                function formatType(t) {
+                    if (t === "primarily_residential") return "Primarily Residential";
+                    if (t === "nonresidential") return "Nonresidential";
+                    if (t === "mixed") return "Mixed";
+                    return t;
+                }
+
+                function fmt(t) {
+                    if (!t || t === "null") return "—";
+                    return t.charAt(0).toUpperCase() + t.slice(1);
+                }
+
+                // Counted off the feature itself so the number can't go stale.
+                function variableCount(props) {
+                    return Object.keys(props).length;
+                }
+
+                function row(label, value) {
+                    return (
+                        '<div class="lul-homemap__popup-row"><span>' + label + "</span><span>" + value + "</span></div>"
+                    );
+                }
+
+                function popupHtml(p, cfg) {
+                    var html = '<div class="lul-homemap__popup">';
+                    if (cfg.showName && p.name) {
+                        html += '<div class="lul-homemap__popup-name">' + p.name + "</div>";
+                    }
+                    html +=
+                        '<div class="lul-homemap__popup-type">' +
+                        formatType(p.type) +
+                        " &middot; " +
+                        Math.round(p.acres) +
+                        " acres</div>" +
+                        '<hr class="lul-homemap__popup-divider"/>' +
+                        row("1-Family", fmt(p.family1_treatment)) +
+                        row("2-Family", fmt(p.family2_treatment)) +
+                        row("3-Family", fmt(p.family3_treatment)) +
+                        row("4+-Family", fmt(p.family4_treatment)) +
+                        // a blurred row hinting at the variables behind the paywall
+                        '<div class="lul-homemap__popup-blur" aria-hidden="true">' +
+                        row("Min Lot Size", "0.25 acres") +
+                        "</div>" +
+                        '<a class="lul-homemap__popup-unlock" href="' +
+                        cfg.orderUrl +
+                        '">Want all ' +
+                        variableCount(p) +
+                        " variables? Order now &rarr;</a>" +
+                        "</div>";
+                    return html;
+                }
+
+                function buildLayer(key, data) {
+                    var cfg = LAYERS[key];
+                    return L.geoJSON(data, {
+                        style: function (feature) {
+                            return {
+                                fillColor: colorFor(key, feature.properties[cfg.colorBy]),
+                                fillOpacity: currentOpacity,
+                                color: "#fff",
+                                weight: 0.75,
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            layer.bindPopup(popupHtml(feature.properties, cfg), { maxWidth: 280 });
+                            layer.on("mouseover", function () {
+                                layer.setStyle({ fillOpacity: Math.min(currentOpacity + 0.3, 1), weight: 1.25 });
+                            });
+                            layer.on("mouseout", function () {
+                                layer.setStyle({ fillOpacity: currentOpacity, weight: 0.75 });
+                            });
+                        },
+                    });
+                }
+
+                function show(key) {
+                    var cfg = LAYERS[key];
+                    currentKey = key;
+                    document.getElementById("lul-homemap__caption-text").textContent = cfg.caption;
+
+                    Object.keys(layers).forEach(function (k) {
+                        if (k !== key && map.hasLayer(layers[k])) map.removeLayer(layers[k]);
+                    });
+
+                    if (layers[key]) {
+                        layers[key].addTo(map);
+                        return;
+                    }
+
+                    var render = function (data) {
+                        cache[key] = data;
+                        layers[key] = buildLayer(key, data);
+                        if (currentKey === key) layers[key].addTo(map);
+                    };
+
+                    if (cache[key]) return render(cache[key]);
+
+                    fetch(cfg.file)
+                        .then(function (resp) {
+                            if (!resp.ok) throw new Error("HTTP " + resp.status);
+                            return resp.json();
+                        })
+                        .then(render)
+                        .catch(function (err) {
+                            console.error("Failed to load " + key + " geojson:", err);
+                        });
+                }
+
+                var tabs = document.querySelectorAll(".lul-homemap__tab");
+                tabs.forEach(function (tab) {
+                    tab.addEventListener("click", function () {
+                        tabs.forEach(function (t) {
+                            t.classList.remove("lulhm-is-active");
+                        });
+                        tab.classList.add("lulhm-is-active");
+                        show(tab.getAttribute("data-key"));
+                    });
+                });
+
+                show("slices");
+            })();
+        </script>
+    </body>
+</html>

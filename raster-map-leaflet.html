@@ -20,97 +20,133 @@
         <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
 
         <style>
-            .lul-map-section {
+            .lul-rastermap {
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             }
-            .lul-tabs {
+            /* Raster switcher tabs. Styled to match the shared button system but with
+               class names scoped to this map (lul-rastermap-*), so embedding it in a
+               Squarespace page can't collide with the standalone .lul-data-* buttons. */
+            .lul-rastermap-tabs {
+                --lulrm-ink: #393347;
+                --lulrm-primary: #594496;
+                --lulrm-primary-hover: #3f2e70;
+                --lulrm-secondary-hover: #f9f9f9;
+                --lulrm-tab-pad: 10px 26px;
+
                 display: flex;
+                align-items: center;
                 gap: 8px;
-                margin-bottom: 18px;
                 flex-wrap: wrap;
             }
-            .lul-tab {
-                font-family: inherit;
-                font-size: 11px;
-                font-weight: 700;
-                letter-spacing: 0.1em;
-                padding: 9px 16px;
-                border: 1px solid rgba(57, 51, 72, 0.15);
-                background: #fff;
-                color: rgba(57, 51, 72, 0.5);
+            .lul-rastermap-tabs .lul-rastermap__tab {
+                -webkit-appearance: none;
+                appearance: none;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 500;
+                font-size: 1rem;
+                line-height: 1.2;
+                padding: var(--lulrm-tab-pad);
+                border: 1px solid transparent;
+                border-radius: 0;
+                letter-spacing: 0.02em;
                 cursor: pointer;
-                border-radius: 4px;
+                background: transparent;
+                border-color: var(--lulrm-ink);
+                color: var(--lulrm-ink);
                 transition:
-                    background 0.15s ease,
-                    color 0.15s ease,
-                    border-color 0.15s ease;
+                    background 0.25s ease,
+                    border-color 0.25s ease,
+                    color 0.25s ease;
             }
-            .lul-tab:hover {
-                color: #393348;
-                border-color: rgba(57, 51, 72, 0.35);
+            .lul-rastermap-tabs .lul-rastermap__tab:hover {
+                background: var(--lulrm-secondary-hover);
             }
-            .lul-tab.active {
-                background: #393348;
-                color: #fff;
-                border-color: #393348;
+            .lul-rastermap-tabs .lul-rastermap__tab.lulrm-is-active {
+                background: var(--lulrm-primary);
+                border-color: var(--lulrm-primary);
+                color: #ffffff;
             }
-            .lul-map-eyebrow {
+            .lul-rastermap-tabs .lul-rastermap__tab.lulrm-is-active:hover {
+                background: var(--lulrm-primary-hover);
+                border-color: var(--lulrm-primary-hover);
+            }
+            /* title on the left, raster tabs pushed to the right on the same line */
+            .lul-rastermap__eyebrow {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 16px;
+                flex-wrap: wrap;
+                margin-bottom: 20px;
+            }
+            .lul-rastermap__title {
                 font-size: 13px;
                 font-weight: 700;
                 letter-spacing: 0.12em;
                 text-transform: uppercase;
                 color: rgba(57, 51, 72, 0.6);
-                margin-bottom: 20px;
             }
-            #lul-raster-map {
+            #lul-rastermap__canvas {
                 width: 100%;
                 height: 580px;
                 border-radius: 4px;
                 border: 1px solid rgba(57, 51, 72, 0.15);
             }
-            .lul-map-caption {
+            .lul-rastermap__caption {
                 font-size: 12px;
                 color: rgba(57, 51, 72, 0.5);
                 margin-top: 10px;
             }
-            .lul-legend {
+            .lul-rastermap__legend {
                 background: #fff;
                 padding: 10px 12px;
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-                border-radius: 4px;
+                border-radius: 0;
                 border: 1px solid rgba(57, 51, 72, 0.12);
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
                 width: 215px;
             }
-            .lul-legend-body {
+            /* square controls, consistent across all the maps */
+            .leaflet-bar,
+            .leaflet-bar a,
+            .leaflet-bar a:first-child,
+            .leaflet-bar a:last-child,
+            .leaflet-control-zoom-in,
+            .leaflet-control-zoom-out {
+                border-radius: 0 !important;
+            }
+            .lul-rastermap__legend-body {
                 max-height: 168px;
                 overflow-y: scroll;
                 margin-top: 8px;
                 scrollbar-width: thin;
                 scrollbar-color: rgba(57, 51, 72, 0.4) rgba(57, 51, 72, 0.08);
             }
-            .lul-legend.collapsed .lul-legend-body {
+            .lul-rastermap__legend.lulrm-is-collapsed .lul-rastermap__legend-body {
                 display: none;
             }
-            .lul-legend-body::-webkit-scrollbar {
+            .lul-rastermap__legend-body::-webkit-scrollbar {
                 width: 8px;
                 -webkit-appearance: none;
             }
-            .lul-legend-body::-webkit-scrollbar-track {
+            .lul-rastermap__legend-body::-webkit-scrollbar-track {
                 background: rgba(57, 51, 72, 0.08);
                 border-radius: 4px;
             }
-            .lul-legend-body::-webkit-scrollbar-thumb {
+            .lul-rastermap__legend-body::-webkit-scrollbar-thumb {
                 background: rgba(57, 51, 72, 0.4);
                 border-radius: 4px;
             }
-            .lul-legend-body::-webkit-scrollbar-thumb:hover {
+            .lul-rastermap__legend-body::-webkit-scrollbar-thumb:hover {
                 background: rgba(57, 51, 72, 0.6);
             }
-            .lul-opacity {
+            .lul-rastermap__opacity {
                 background: #fff;
                 padding: 6px 10px;
-                border-radius: 4px;
+                border-radius: 0;
                 border: 1px solid rgba(57, 51, 72, 0.12);
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -118,19 +154,19 @@
                 align-items: center;
                 gap: 8px;
             }
-            .lul-opacity-label {
+            .lul-rastermap__opacity-label {
                 font-size: 9.5px;
                 font-weight: 700;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
                 color: rgba(57, 51, 72, 0.5);
             }
-            .lul-opacity input[type="range"] {
+            .lul-rastermap__opacity input[type="range"] {
                 width: 80px;
                 cursor: pointer;
                 accent-color: #393348;
             }
-            .lul-legend-title {
+            .lul-rastermap__legend-title {
                 font-size: 11px;
                 font-weight: 700;
                 letter-spacing: 0.08em;
@@ -143,14 +179,14 @@
                 cursor: pointer;
                 user-select: none;
             }
-            .lul-legend-caret {
+            .lul-rastermap__legend-caret {
                 font-size: 9px;
                 transition: transform 0.15s ease;
             }
-            .lul-legend.collapsed .lul-legend-caret {
+            .lul-rastermap__legend.lulrm-is-collapsed .lul-rastermap__legend-caret {
                 transform: rotate(-90deg);
             }
-            .lul-legend-row {
+            .lul-rastermap__legend-row {
                 display: flex;
                 align-items: flex-start;
                 gap: 8px;
@@ -159,13 +195,13 @@
                 color: #393348;
                 margin-bottom: 5px;
             }
-            .lul-legend-row:last-child {
+            .lul-rastermap__legend-row:last-child {
                 margin-bottom: 0;
             }
-            .lul-legend-row span:last-child {
+            .lul-rastermap__legend-row span:last-child {
                 overflow-wrap: anywhere;
             }
-            .lul-legend-swatch {
+            .lul-rastermap__legend-swatch {
                 display: inline-block;
                 width: 14px;
                 height: 14px;
@@ -176,17 +212,17 @@
             }
         </style>
 
-        <div class="lul-map-section">
-            <div class="lul-tabs">
-                <button class="lul-tab active" data-key="general" type="button">General</button>
-                <button class="lul-tab" data-key="residential" type="button">Residential</button>
-                <button class="lul-tab" data-key="nonresidential" type="button">Nonresidential</button>
+        <div class="lul-rastermap">
+            <div class="lul-rastermap__eyebrow">
+                <span class="lul-rastermap__title">Zoning Raster Sample: Clark County, NV</span>
+                <div class="lul-rastermap-tabs">
+                    <button class="lul-rastermap__tab lulrm-is-active" data-key="general" type="button">General</button>
+                    <button class="lul-rastermap__tab" data-key="residential" type="button">Residential</button>
+                    <button class="lul-rastermap__tab" data-key="nonresidential" type="button">Nonresidential</button>
+                </div>
             </div>
-            <div class="lul-map-eyebrow" style="display: flex; justify-content: space-between">
-                <span>Zoning Raster Sample: Clark County, NV</span>
-            </div>
-            <div id="lul-raster-map"></div>
-            <p class="lul-map-caption">
+            <div id="lul-rastermap__canvas"></div>
+            <p class="lul-rastermap__caption">
                 Each pixel is colored by its zoning classification. Switch tabs to compare the general, residential, and
                 nonresidential breakdowns.
             </p>
@@ -265,7 +301,7 @@
                 // classes: [pixel value, RAT variable name, [r, g, b]]
                 var RASTERS = {
                     general: {
-                        file: "rasters/test_general_3857.tif",
+                        file: "rasters/test_general_raster_3857.tif",
                         title: "Classification",
                         names: NAMES_GENERAL,
                         classes: [
@@ -332,7 +368,7 @@
                     },
                 };
 
-                var map = L.map("lul-raster-map", {
+                var map = L.map("lul-rastermap__canvas", {
                     center: [36.17, -115.14],
                     zoom: 11,
                     zoomControl: true,
@@ -359,7 +395,7 @@
                 // Legend control, rebuilt each time the active raster changes.
                 var legend = L.control({ position: "bottomright" });
                 legend.onAdd = function () {
-                    this._div = L.DomUtil.create("div", "lul-legend");
+                    this._div = L.DomUtil.create("div", "lul-rastermap__legend");
                     L.DomEvent.disableClickPropagation(this._div);
                     L.DomEvent.disableScrollPropagation(this._div);
                     return this._div;
@@ -367,17 +403,17 @@
                 legend.addTo(map);
                 function renderLegend(cfg) {
                     legend._div.innerHTML =
-                        '<div class="lul-legend-title">' +
+                        '<div class="lul-rastermap__legend-title">' +
                         "<span>" +
                         cfg.title +
                         "</span>" +
-                        '<span class="lul-legend-caret">▼</span>' +
+                        '<span class="lul-rastermap__legend-caret">▼</span>' +
                         "</div>" +
-                        '<div class="lul-legend-body">' +
+                        '<div class="lul-rastermap__legend-body">' +
                         cfg.classes
                             .map(function (c) {
                                 return (
-                                    '<div class="lul-legend-row"><span class="lul-legend-swatch" style="background:rgb(' +
+                                    '<div class="lul-rastermap__legend-row"><span class="lul-rastermap__legend-swatch" style="background:rgb(' +
                                     c[2][0] +
                                     "," +
                                     c[2][1] +
@@ -391,8 +427,8 @@
                             })
                             .join("") +
                         "</div>";
-                    legend._div.querySelector(".lul-legend-title").addEventListener("click", function () {
-                        legend._div.classList.toggle("collapsed");
+                    legend._div.querySelector(".lul-rastermap__legend-title").addEventListener("click", function () {
+                        legend._div.classList.toggle("lulrm-is-collapsed");
                     });
                 }
 
@@ -450,9 +486,9 @@
                 // Tiny opacity slider (top-right).
                 var opacityCtl = L.control({ position: "topright" });
                 opacityCtl.onAdd = function () {
-                    var div = L.DomUtil.create("div", "lul-opacity");
+                    var div = L.DomUtil.create("div", "lul-rastermap__opacity");
                     div.innerHTML =
-                        '<span class="lul-opacity-label">Opacity</span>' +
+                        '<span class="lul-rastermap__opacity-label">Opacity</span>' +
                         '<input type="range" min="0" max="1" step="0.05" value="' +
                         currentOpacity +
                         '" />';
@@ -466,13 +502,13 @@
                 };
                 opacityCtl.addTo(map);
 
-                var tabs = document.querySelectorAll(".lul-tab");
+                var tabs = document.querySelectorAll(".lul-rastermap__tab");
                 tabs.forEach(function (tab) {
                     tab.addEventListener("click", function () {
                         tabs.forEach(function (t) {
-                            t.classList.remove("active");
+                            t.classList.remove("lulrm-is-active");
                         });
-                        tab.classList.add("active");
+                        tab.classList.add("lulrm-is-active");
                         showRaster(tab.getAttribute("data-key"));
                     });
                 });

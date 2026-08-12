@@ -18,10 +18,10 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
         <style>
-            .lul-map-section {
+            .lul-slicesmap {
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             }
-            .lul-map-eyebrow {
+            .lul-slicesmap__eyebrow {
                 font-size: 13px;
                 font-weight: 700;
                 letter-spacing: 0.12em;
@@ -29,21 +29,21 @@
                 color: rgba(57, 51, 72, 0.6);
                 margin-bottom: 20px;
             }
-            #lul-slices-map {
+            #lul-slicesmap__canvas {
                 width: 100%;
                 height: 580px;
                 border-radius: 4px;
                 border: 1px solid rgba(57, 51, 72, 0.15);
             }
-            .lul-map-caption {
+            .lul-slicesmap__caption {
                 font-size: 12px;
                 color: rgba(57, 51, 72, 0.5);
                 margin-top: 10px;
             }
-            .lul-opacity {
+            .lul-slicesmap__opacity {
                 background: #fff;
                 padding: 6px 10px;
-                border-radius: 4px;
+                border-radius: 0;
                 border: 1px solid rgba(57, 51, 72, 0.12);
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -51,17 +51,26 @@
                 align-items: center;
                 gap: 8px;
             }
-            .lul-opacity-label {
+            .lul-slicesmap__opacity-label {
                 font-size: 9.5px;
                 font-weight: 700;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
                 color: rgba(57, 51, 72, 0.5);
             }
-            .lul-opacity input[type="range"] {
+            .lul-slicesmap__opacity input[type="range"] {
                 width: 80px;
                 cursor: pointer;
                 accent-color: #393348;
+            }
+            /* square controls, consistent across all the maps */
+            .leaflet-bar,
+            .leaflet-bar a,
+            .leaflet-bar a:first-child,
+            .leaflet-bar a:last-child,
+            .leaflet-control-zoom-in,
+            .leaflet-control-zoom-out {
+                border-radius: 0 !important;
             }
             .leaflet-popup-content-wrapper {
                 border-radius: 4px !important;
@@ -73,17 +82,17 @@
                 margin: 0 !important;
                 width: auto !important;
             }
-            .lul-popup {
+            .lul-slicesmap__popup {
                 padding: 14px 16px;
                 min-width: 200px;
             }
-            .lul-popup-name {
+            .lul-slicesmap__popup-name {
                 font-size: 14px;
                 font-weight: 700;
                 color: #393348;
                 margin-bottom: 4px;
             }
-            .lul-popup-type {
+            .lul-slicesmap__popup-type {
                 font-size: 11px;
                 font-weight: 600;
                 letter-spacing: 0.08em;
@@ -91,7 +100,7 @@
                 color: rgba(57, 51, 72, 0.5);
                 margin-bottom: 10px;
             }
-            .lul-popup-row {
+            .lul-slicesmap__popup-row {
                 display: flex;
                 justify-content: space-between;
                 gap: 16px;
@@ -99,25 +108,25 @@
                 color: rgba(57, 51, 72, 0.6);
                 margin-bottom: 3px;
             }
-            .lul-popup-row span:last-child {
+            .lul-slicesmap__popup-row span:last-child {
                 font-weight: 600;
                 color: #393348;
                 text-align: right;
             }
-            .lul-popup-divider {
+            .lul-slicesmap__popup-divider {
                 border: none;
                 border-top: 1px solid rgba(57, 51, 72, 0.1);
                 margin: 8px 0;
             }
         </style>
 
-        <div class="lul-map-section">
-            <div class="lul-map-eyebrow" style="display: flex; justify-content: space-between">
+        <div class="lul-slicesmap">
+            <div class="lul-slicesmap__eyebrow" style="display: flex; justify-content: space-between">
                 <span>Zoning Slices Sample: Lafayette, CO</span>
                 <span>31 Slices</span>
             </div>
-            <div id="lul-slices-map"></div>
-            <p class="lul-map-caption">
+            <div id="lul-slicesmap__canvas"></div>
+            <p class="lul-slicesmap__caption">
                 Each color is a unique Slice — a distinct combination of base and overlay districts. Click any polygon
                 to see its governing rules.
             </p>
@@ -130,7 +139,7 @@
                 var geoLayer = null;
                 var currentOpacity = 0.6;
 
-                var map = L.map("lul-slices-map", {
+                var map = L.map("lul-slicesmap__canvas", {
                     center: [39.991, -105.1064],
                     zoom: 13,
                     zoomControl: true,
@@ -148,9 +157,9 @@
                 // Tiny opacity slider (top-right).
                 var opacityCtl = L.control({ position: "topright" });
                 opacityCtl.onAdd = function () {
-                    var div = L.DomUtil.create("div", "lul-opacity");
+                    var div = L.DomUtil.create("div", "lul-slicesmap__opacity");
                     div.innerHTML =
-                        '<span class="lul-opacity-label">Opacity</span>' +
+                        '<span class="lul-slicesmap__opacity-label">Opacity</span>' +
                         '<input type="range" min="0" max="1" step="0.05" value="' + currentOpacity + '" />';
                     L.DomEvent.disableClickPropagation(div);
                     L.DomEvent.disableScrollPropagation(div);
@@ -187,23 +196,23 @@
 
                 function popupHtml(p) {
                     return (
-                        '<div class="lul-popup">' +
-                        '<div class="lul-popup-type">' +
+                        '<div class="lul-slicesmap__popup">' +
+                        '<div class="lul-slicesmap__popup-type">' +
                         formatType(p.type) +
                         " &middot; " +
                         Math.round(p.acres) +
                         " acres</div>" +
-                        '<hr class="lul-popup-divider"/>' +
-                        '<div class="lul-popup-row"><span>1-Family</span><span>' +
+                        '<hr class="lul-slicesmap__popup-divider"/>' +
+                        '<div class="lul-slicesmap__popup-row"><span>1-Family</span><span>' +
                         fmt(p.family1_treatment) +
                         "</span></div>" +
-                        '<div class="lul-popup-row"><span>2-Family</span><span>' +
+                        '<div class="lul-slicesmap__popup-row"><span>2-Family</span><span>' +
                         fmt(p.family2_treatment) +
                         "</span></div>" +
-                        '<div class="lul-popup-row"><span>3-Family</span><span>' +
+                        '<div class="lul-slicesmap__popup-row"><span>3-Family</span><span>' +
                         fmt(p.family3_treatment) +
                         "</span></div>" +
-                        '<div class="lul-popup-row"><span>4+-Family</span><span>' +
+                        '<div class="lul-slicesmap__popup-row"><span>4+-Family</span><span>' +
                         fmt(p.family4_treatment) +
                         "</span></div>" +
                         "</div>"

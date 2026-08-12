@@ -215,6 +215,23 @@ def build_labels(conn):
         os.unlink(tmp)
 
 
+def build_no_zoning(conn):
+    """Ids of published jurisdictions that have no zoning at all.
+
+    The atlas_jurisdictions API doesn't expose `haszoning`, and zone_count is not a
+    safe stand-in (82 published rows disagree). So ship the ids as a side file and
+    apply them as feature state, the same way `published` is applied from the API.
+    Drop this once the API returns has_zoning.
+    """
+    path = os.path.join(OUT_DIR, "no_zoning_ids.json")
+    with conn.cursor() as cur:
+        cur.execute("select id from website_jurisdiction where published and haszoning is false order by id")
+        ids = [r[0] for r in cur.fetchall()]
+    with open(path, "w") as fh:
+        json.dump(ids, fh, separators=(",", ":"))
+    print(f"  no_zoning_ids.json: {len(ids)} ids, {os.path.getsize(path) / 1024:.0f} KB")
+
+
 def build_jurisdictions(conn):
     out = os.path.join(OUT_DIR, "jurisdictions.pmtiles")
     fd, tmp = tempfile.mkstemp(suffix=".geojsonl")
@@ -257,6 +274,9 @@ def main():
     if only in (None, "jurisdictions", "labels"):
         print("Building jurisdiction labels...")
         build_labels(conn)
+    if only in (None, "jurisdictions", "zoning"):
+        print("Building no-zoning list...")
+        build_no_zoning(conn)
     conn.close()
     print("Done.")
 

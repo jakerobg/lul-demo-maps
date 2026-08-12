@@ -1,0 +1,200 @@
+<!--
+  Primary button (filled purple) with a dropdown menu.
+
+  ▶ Colours and padding are the vars at the top. A button's border always
+    matches its own fill/outline, and each menu inherits its parent button's
+    colour via --lul-menu-accent so the seam under the button lines up.
+-->
+<style>
+    .lul-data-actions {
+        --lul-ink: #393347; /* secondary border + label */
+        --lul-primary: #594496; /* primary fill + border */
+        --lul-primary-hover: #3f2e70;
+        --lul-secondary-hover: #f9f9f9;
+        --lul-btn-pad: 10px 26px;
+
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        color: var(--lul-ink);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+    .lul-data-actions *,
+    .lul-data-actions *::before,
+    .lul-data-actions *::after {
+        box-sizing: border-box;
+    }
+
+    /* Each dropdown passes its button's colour down to its own menu. */
+    .lul-data-actions .lul-data__dropdown {
+        position: relative;
+        display: inline-block;
+        --lul-menu-accent: var(--lul-ink);
+    }
+    .lul-data-actions .lul-data__dropdown:has(.lul-data__btn--primary) {
+        --lul-menu-accent: var(--lul-primary);
+    }
+
+    /* Shared shell. Border is transparent here so each variant owns its own
+       border-colour rather than overriding a default. */
+    .lul-data-actions .lul-data__btn {
+        -webkit-appearance: none;
+        appearance: none;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-weight: 500;
+        font-size: 1rem;
+        line-height: 1.2;
+        padding: var(--lul-btn-pad);
+        border: 1px solid transparent;
+        border-radius: 0;
+        text-decoration: none;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition:
+            background 0.25s ease,
+            border-color 0.25s ease,
+            color 0.25s ease,
+            gap 0.25s ease;
+    }
+    .lul-data-actions .lul-data__btn:hover {
+        gap: 12px;
+    }
+
+    .lul-data-actions .lul-data__btn--primary {
+        background: var(--lul-primary);
+        border-color: var(--lul-primary);
+        color: #ffffff;
+    }
+    .lul-data-actions .lul-data__btn--primary:hover {
+        background: var(--lul-primary-hover);
+        border-color: var(--lul-primary-hover);
+    }
+
+    .lul-data-actions .lul-data__btn--secondary {
+        background: transparent;
+        border-color: var(--lul-ink);
+        color: var(--lul-ink);
+    }
+    .lul-data-actions .lul-data__btn--secondary:hover {
+        background: var(--lul-secondary-hover);
+    }
+
+    .lul-data-actions .lul-data__or {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        color: var(--lul-ink);
+        font-size: 1rem;
+        opacity: 0.7;
+    }
+
+    .lul-data-actions .lul-data__btn svg {
+        width: 14px;
+        height: 14px;
+        transition: transform 0.25s ease;
+    }
+    .lul-data-actions .lul-data__dropdown.lul-is-open .lul-data__btn svg {
+        transform: rotate(180deg);
+    }
+
+    /* Dropdown menu */
+    .lul-data-actions .lul-data__menu {
+        position: absolute;
+        top: calc(100% - 1px); /* overlap the button's bottom border */
+        left: 0;
+        min-width: 100%;
+        background: #ffffff;
+        border: 1px solid var(--lul-menu-accent);
+        z-index: 50;
+        display: none;
+        flex-direction: column;
+    }
+    .lul-data-actions .lul-data__dropdown.lul-is-open .lul-data__menu {
+        display: flex;
+    }
+    .lul-data-actions .lul-data__option {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-weight: 500;
+        font-size: 0.95rem;
+        color: var(--lul-ink);
+        text-decoration: none;
+        white-space: nowrap;
+        padding: var(--lul-btn-pad);
+        border-bottom: 1px solid rgba(57, 51, 71, 0.15);
+        transition:
+            background 0.2s ease,
+            color 0.2s ease;
+    }
+    .lul-data-actions .lul-data__option:last-child {
+        border-bottom: none;
+    }
+    .lul-data-actions .lul-data__option:hover {
+        background: var(--lul-menu-accent);
+        color: #ffffff;
+    }
+</style>
+
+<div class="lul-data-actions">
+    <div class="lul-data__dropdown">
+        <a href="#" role="button" class="lul-data__btn lul-data__btn--primary lul-data__toggle">
+            View Data Dictionary
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path
+                    d="M5 8l5 5 5-5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+            </svg>
+        </a>
+        <div class="lul-data__menu">
+            <a
+                class="lul-data__option"
+                href="https://docs.google.com/spreadsheets/d/17nrhEbS1OuwdRotXZwyiKmVuKccYH1A3/edit?gid=112307427#gid=112307427"
+                >General</a
+            >
+            <a
+                class="lul-data__option"
+                href="https://docs.google.com/spreadsheets/d/17nrhEbS1OuwdRotXZwyiKmVuKccYH1A3/edit?gid=1343210928#gid=1343210928"
+                >Residential</a
+            >
+            <a
+                class="lul-data__option"
+                href="https://docs.google.com/spreadsheets/d/17nrhEbS1OuwdRotXZwyiKmVuKccYH1A3/edit?gid=421718271#gid=421718271"
+                >Nonresidential</a
+            >
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var dropdowns = document.querySelectorAll(".lul-data-actions .lul-data__dropdown");
+
+        dropdowns.forEach(function (dd) {
+            var toggle = dd.querySelector(".lul-data__toggle");
+            toggle.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var isOpen = dd.classList.contains("lul-is-open");
+                dropdowns.forEach(function (other) {
+                    other.classList.remove("lul-is-open");
+                });
+                if (!isOpen) dd.classList.add("lul-is-open");
+            });
+        });
+
+        document.addEventListener("click", function () {
+            dropdowns.forEach(function (dd) {
+                dd.classList.remove("lul-is-open");
+            });
+        });
+    })();
+</script>
