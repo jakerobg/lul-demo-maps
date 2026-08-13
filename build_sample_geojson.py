@@ -12,6 +12,7 @@ popup copy, since they're no longer derivable from the trimmed properties.
 
 import json
 import os
+import sys
 
 from shapely.geometry import mapping, shape
 
@@ -57,10 +58,16 @@ def round_coords(obj, nd):
 
 
 def main():
+    only = sys.argv[1] if len(sys.argv) > 1 else None
     os.makedirs(OUT_DIR, exist_ok=True)
     for key, cfg in SOURCES.items():
+        if only and key != only:
+            continue
         src = os.path.join(HERE, cfg["src"])
         out = os.path.join(OUT_DIR, cfg["out"])
+        if not os.path.exists(src):
+            print(f"{key:10} skipped — {cfg['src']} not present")
+            continue
         data = json.load(open(src))
 
         total_vars = len(data["features"][0]["properties"])
