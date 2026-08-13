@@ -159,7 +159,9 @@
                     var div = L.DomUtil.create("div", "lul-districtsmap__opacity");
                     div.innerHTML =
                         '<span class="lul-districtsmap__opacity-label">Opacity</span>' +
-                        '<input type="range" min="0" max="1" step="0.05" value="' + currentOpacity + '" />';
+                        '<input type="range" min="0" max="1" step="0.05" value="' +
+                        currentOpacity +
+                        '" />';
                     L.DomEvent.disableClickPropagation(div);
                     L.DomEvent.disableScrollPropagation(div);
                     div.querySelector("input").addEventListener("input", function () {
@@ -221,7 +223,7 @@
                     );
                 }
 
-                fetch("lafayette_co_districts_sample.geojson")
+                fetch("data/lafayette_districts.geojson")
                     .then(function (resp) {
                         if (!resp.ok) throw new Error("HTTP " + resp.status);
                         return resp.json();

@@ -160,7 +160,9 @@
                     var div = L.DomUtil.create("div", "lul-slicesmap__opacity");
                     div.innerHTML =
                         '<span class="lul-slicesmap__opacity-label">Opacity</span>' +
-                        '<input type="range" min="0" max="1" step="0.05" value="' + currentOpacity + '" />';
+                        '<input type="range" min="0" max="1" step="0.05" value="' +
+                        currentOpacity +
+                        '" />';
                     L.DomEvent.disableClickPropagation(div);
                     L.DomEvent.disableScrollPropagation(div);
                     div.querySelector("input").addEventListener("input", function () {
@@ -219,7 +221,7 @@
                     );
                 }
 
-                fetch("lafayette_co_slices_sample.geojson")
+                fetch("data/lafayette_slices.geojson")
                     .then(function (resp) {
                         if (!resp.ok) throw new Error("HTTP " + resp.status);
                         return resp.json();
