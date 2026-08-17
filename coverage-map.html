@@ -44,21 +44,11 @@
                 color: rgba(57, 51, 72, 0.6);
                 margin-bottom: 20px;
                 display: flex;
-                justify-content: space-between;
+                justify-content: center;
                 align-items: flex-end;
                 gap: 12px;
                 flex-wrap: wrap;
-            }
-
-            /* own line under the title, so step out of the eyebrow's uppercase treatment */
-            .lul-map-hint {
-                display: block;
-                font-size: 12px;
-                font-weight: 400;
-                letter-spacing: normal;
-                text-transform: none;
-                color: rgba(57, 51, 72, 0.5);
-                margin-top: 6px;
+                text-align: center;
             }
 
             /* ---- map shell ---- */
@@ -710,10 +700,7 @@
 
         <section class="lul-coverage">
             <div class="lul-map-eyebrow">
-                <div>
-                    Land Use Labs Data Coverage
-                    <span class="lul-map-hint">Zoom in and click a state or jurisdiction to learn more</span>
-                </div>
+                <div>Zoom into our interactive map to see if your geography is available</div>
             </div>
 
             <div id="lul-coverage-map">
