@@ -29,8 +29,8 @@
                 padding: 20px 20px 20px;
                 box-sizing: border-box;
                 /* Fixed overall height so the iframe never needs resizing: the map
-                   gives back exactly what the header takes when the stats wrap. */
-                height: 760px;
+                   gives back exactly what the header takes when the title wraps. */
+                height: 620px;
                 display: flex;
                 flex-direction: column;
             }
@@ -60,32 +60,6 @@
                 margin-top: 6px;
             }
 
-            /* ---- national rollup ---- */
-            .lul-rollup {
-                display: flex;
-                gap: 28px;
-                text-transform: none;
-                letter-spacing: normal;
-            }
-            .lul-rollup div {
-                text-align: right;
-            }
-            .lul-rollup .lul-rollup-num {
-                font-size: 22px;
-                font-weight: 700;
-                color: #393348;
-                line-height: 1.1;
-                font-variant-numeric: tabular-nums;
-            }
-            .lul-rollup .lul-rollup-label {
-                font-size: 10px;
-                font-weight: 700;
-                letter-spacing: 0.1em;
-                text-transform: uppercase;
-                color: rgba(57, 51, 72, 0.5);
-                margin-top: 4px;
-            }
-
             /* ---- map shell ---- */
             #lul-coverage-map {
                 width: 100%;
@@ -109,6 +83,9 @@
                 left: 12px;
                 z-index: 2;
                 background: #fff;
+                /* fixed so the attribution beside it can be offset by a known amount */
+                width: 180px;
+                box-sizing: border-box;
                 padding: 12px 14px;
                 border-radius: 0;
                 border: 1px solid rgba(57, 51, 72, 0.12);
@@ -149,10 +126,41 @@
                 border-radius: 0;
             }
 
-            /* The attribution expands leftward along the bottom edge and would run into
-               the legend. It starts collapsed to the ⓘ (see createMap); this caps how far
-               it can reach even once expanded, so the two can never meet. */
-            #lul-coverage-map .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+            /* Sits with the zoom buttons rather than in the panel, because it's about
+               the map as a whole and not about whatever is currently selected. */
+            #lul-coverage-map .lul-national button {
+                width: auto;
+                height: auto;
+                display: block;
+                padding: 7px 10px;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.75);
+                background: #fff;
+                border: none;
+                cursor: pointer;
+                white-space: nowrap;
+            }
+            #lul-coverage-map .lul-national button:hover {
+                background: #f2f1f0;
+                color: #393348;
+            }
+            #lul-coverage-map .lul-national button:disabled {
+                color: rgba(57, 51, 72, 0.3);
+                background: #fff;
+                cursor: default;
+            }
+
+            /* The attribution sits at the bottom left, just clear of the legend's 180px.
+               It starts collapsed to the ⓘ (see createMap) and expands rightward into
+               open map, capped so it can't run under the panel. */
+            #lul-coverage-map .maplibregl-ctrl-bottom-left {
+                margin-left: 192px;
+            }
+            #lul-coverage-map .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
                 max-width: 55%;
             }
 
@@ -201,7 +209,7 @@
                 margin-top: 3px;
             }
 
-            /* published / not-published pill in the panel headline */
+            /* available / not-yet-available pill in the panel headline */
             .lul-pill {
                 display: inline-block;
                 font-size: 11px;
@@ -212,13 +220,9 @@
                 background: #efedec;
                 color: rgba(57, 51, 72, 0.65);
             }
-            .lul-pill.is-published {
+            .lul-pill.is-available {
                 background: #c9d0a0;
                 color: #393348;
-            }
-            .lul-pill.is-nozoning {
-                background: #9a9691;
-                color: #ffffff;
             }
 
             /* ---- pinned stats panel ---- */
@@ -254,6 +258,16 @@
             }
             .lul-statbox-close:hover {
                 color: #393348;
+            }
+            /* says which kind of thing the panel is about, in the header's eyebrow voice */
+            .lul-statbox-kind {
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: rgba(57, 51, 72, 0.45);
+                padding-right: 18px; /* clear of the close button */
+                margin-bottom: 10px;
             }
             .lul-statbox-abbr {
                 display: inline-block;
@@ -326,16 +340,43 @@
                 font-weight: 700;
                 font-variant-numeric: tabular-nums;
             }
-            .lul-statbox-actions {
-                display: flex;
-                gap: 8px;
-                margin-top: 14px;
+            /* a button is taller than the plain values, so this row centres instead of
+               sitting on the shared baseline */
+            .lul-statrow--zoom {
+                align-items: center;
+            }
+            /* the State value doubles as the way back out to that state */
+            .lul-statrow-zoom {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                font-family: inherit;
+                font-size: 14px;
+                font-weight: 700;
+                color: #393348;
+                background: rgba(57, 51, 72, 0.07);
+                border: none;
+                border-radius: 2px;
+                padding: 3px 7px;
+                /* pull back out to the row's own edges so the box doesn't shift the text */
+                margin: -3px -7px -3px 0;
+                cursor: pointer;
+                transition: background 0.2s ease;
+            }
+            .lul-statrow-zoom:hover {
+                background: rgba(57, 51, 72, 0.14);
+            }
+            .lul-statrow-zoom svg {
+                width: 1em;
+                height: 1em;
+                flex: none;
             }
 
             /* ---- buttons: shared system (see BUTTONS_PRIMARY_SECONDARY.html
                    and button_PRIMARY_dropdown.html) ---- */
             .lul-data-actions {
-                --lul-ink: #393347; /* secondary border + label */
+                --lul-ink: #393347; /* secondary border + label, tertiary fill */
+                --lul-ink-hover: #22202b;
                 --lul-primary: #594496; /* primary fill + border */
                 --lul-primary-hover: #3f2e70;
                 --lul-secondary-hover: #f9f9f9;
@@ -415,6 +456,18 @@
                 background: var(--lul-secondary-hover);
             }
 
+            /* filled, but in ink rather than the primary purple — a third weight for
+               actions that aren't the sale and aren't quite plain either */
+            .lul-data-actions .lul-data__btn--tertiary {
+                background: var(--lul-ink);
+                border-color: var(--lul-ink);
+                color: #ffffff;
+            }
+            .lul-data-actions .lul-data__btn--tertiary:hover {
+                background: var(--lul-ink-hover);
+                border-color: var(--lul-ink-hover);
+            }
+
             .lul-data-actions .lul-data__btn svg {
                 width: 14px;
                 height: 14px;
@@ -467,9 +520,98 @@
                 color: #ffffff;
             }
 
-            /* ---- compact overrides: the panel is only 300px wide ---- */
-            .lul-statbox-unlock {
+            /* ---- state navigation: zoom to state / to one jurisdiction ---- */
+            .lul-statbox-zoom {
+                display: block;
                 margin-top: 16px;
+            }
+            .lul-statbox-zoom.is-hidden,
+            .lul-statbox-zoom .lul-data__dropdown.is-hidden {
+                display: none;
+            }
+            /* flex, not block: block would drop the shell's own centring and leave the
+               label and its icon ranged left */
+            .lul-statbox-zoom .lul-data__btn {
+                display: flex;
+                width: 100%;
+            }
+            .lul-statbox-zoom .lul-data__dropdown {
+                display: block;
+                width: 100%;
+            }
+            /* the magnifier reads as part of the label, so it shouldn't slide on hover */
+            #lul-sb-zoomstate:hover svg {
+                transform: none;
+            }
+            .lul-statbox-zoom .lul-data__dropdown {
+                margin-top: 8px;
+            }
+            /* The list is long, so this menu drops as a panel rather than sizing to
+               the button, and scrolls internally instead of past the map edge. */
+            .lul-statbox-zoom .lul-data__menu {
+                max-height: 220px;
+                overflow: hidden;
+            }
+            .lul-jz-search {
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 0.8125rem;
+                color: var(--lul-ink);
+                border: none;
+                border-bottom: 1px solid rgba(57, 51, 71, 0.15);
+                padding: 9px 12px;
+                width: 100%;
+                box-sizing: border-box;
+                outline: none;
+            }
+            .lul-jz-search:focus {
+                border-bottom-color: var(--lul-ink);
+            }
+            .lul-jz-list {
+                max-height: 176px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: rgba(57, 51, 72, 0.4) rgba(57, 51, 72, 0.08);
+            }
+            .lul-jz-item {
+                display: block;
+                width: 100%;
+                text-align: left;
+                background: none;
+                border: none;
+                border-bottom: 1px solid rgba(57, 51, 71, 0.08);
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 0.8125rem;
+                color: var(--lul-ink);
+                padding: 8px 12px;
+                cursor: pointer;
+                transition:
+                    background 0.2s ease,
+                    color 0.2s ease;
+            }
+            .lul-jz-item:hover {
+                background: var(--lul-menu-accent);
+                color: #ffffff;
+            }
+            /* "no matches" / "keep typing" — a message, not a choice */
+            .lul-jz-note {
+                font-size: 11px;
+                color: rgba(57, 51, 72, 0.5);
+                padding: 8px 12px;
+            }
+
+            /* ---- compact overrides: the panel is only 300px wide ---- */
+            /* Buying data is a different job from reading the panel or moving around the
+               map, so rule it off on both kinds of panel. */
+            .lul-statbox-unlock {
+                border-top: 1px solid rgba(57, 51, 72, 0.12);
+                margin-top: 18px;
+                padding-top: 18px;
+            }
+            /* With no zoom controls above it the rule follows a stat row, which already
+               carries its own padding — so close the gap. */
+            .lul-statbox-zoom.is-hidden + .lul-statbox-unlock {
+                margin-top: 0;
+                padding-top: 13px;
             }
             .lul-statbox-unlock .lul-data__dropdown {
                 display: block;
@@ -478,33 +620,23 @@
             .lul-statbox-unlock .lul-data__btn {
                 width: 100%;
             }
-            /* Two classes so this beats .lul-data-actions' own --lul-btn-pad regardless
-               of source order — with the full 10px 26px the pair overflows the panel. */
-            .lul-statbox-actions.lul-data-actions {
-                --lul-btn-pad: 9px 12px;
-                gap: 8px;
-                flex-wrap: nowrap;
-            }
-            .lul-statbox-actions .lul-data__btn {
-                flex: 1;
-                white-space: nowrap;
-            }
             /* one smaller type scale + padding for everything inside the panel */
-            .lul-statbox-unlock.lul-data-actions {
+            .lul-statbox-unlock.lul-data-actions,
+            .lul-statbox-zoom.lul-data-actions {
                 --lul-btn-pad: 9px 12px;
             }
             .lul-statbox-unlock .lul-data__btn,
-            .lul-statbox-actions .lul-data__btn,
+            .lul-statbox-zoom .lul-data__btn,
             .lul-statbox-unlock .lul-data__option {
                 font-size: 0.8125rem;
                 gap: 7px;
             }
             .lul-statbox-unlock .lul-data__btn:hover,
-            .lul-statbox-actions .lul-data__btn:hover {
+            .lul-statbox-zoom .lul-data__btn:hover {
                 gap: 9px;
             }
             .lul-statbox-unlock .lul-data__btn svg,
-            .lul-statbox-actions .lul-data__btn svg {
+            .lul-statbox-zoom .lul-data__btn svg {
                 width: 12px;
                 height: 12px;
             }
@@ -512,18 +644,18 @@
                 white-space: normal;
             }
 
-            /* the line between the dropdown and the two buttons */
+            /* only speaks up when there's no data to sell for this geography */
             .lul-statbox-prompt {
                 font-size: 11px;
                 line-height: 1.35;
-                color: rgba(57, 51, 72, 0.55);
-                margin: 12px 0 8px;
-            }
-            .lul-statbox-prompt.is-unpublished {
                 color: rgba(57, 51, 72, 0.7);
+                margin: 12px 0 0;
+            }
+            .lul-statbox-prompt:empty {
+                display: none;
             }
 
-            /* nothing to buy for an unpublished jurisdiction */
+            /* nothing to buy for a jurisdiction that isn't available yet */
             .lul-data-actions .lul-data__btn.is-disabled,
             .lul-data-actions .lul-data__btn.is-disabled:hover {
                 pointer-events: none;
@@ -568,6 +700,10 @@
                 .lul-legend {
                     display: none;
                 }
+                /* nothing to clear once the legend is gone */
+                #lul-coverage-map .maplibregl-ctrl-bottom-left {
+                    margin-left: 0;
+                }
             }
         </style>
 
@@ -577,7 +713,6 @@
                     Land Use Labs Data Coverage
                     <span class="lul-map-hint">Zoom in and click a state or jurisdiction to learn more</span>
                 </div>
-                <div class="lul-rollup" id="lul-rollup"></div>
             </div>
 
             <div id="lul-coverage-map">
@@ -594,6 +729,7 @@
                     <button class="lul-statbox-close" id="lul-statbox-close" type="button" aria-label="Close">
                         &times;
                     </button>
+                    <div class="lul-statbox-kind" id="lul-sb-kind"></div>
                     <div class="lul-statbox-abbr" id="lul-sb-abbr"></div>
                     <div class="lul-statbox-name" id="lul-sb-name"></div>
                     <div class="lul-statbox-pct" id="lul-sb-headline"></div>
@@ -602,15 +738,24 @@
                     </div>
                     <div id="lul-sb-rows"></div>
 
-                    <div class="lul-statbox-unlock lul-data-actions">
-                        <div class="lul-data__dropdown" id="lul-sb-dropdown">
+                    <!-- state-only navigation; hidden when a jurisdiction is selected -->
+                    <div class="lul-statbox-zoom lul-data-actions" id="lul-sb-zoom">
+                        <a href="#" role="button" class="lul-data__btn lul-data__btn--secondary" id="lul-sb-zoomstate">
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <circle cx="9" cy="9" r="5.25" stroke="currentColor" stroke-width="2" />
+                                <path d="M13 13l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                            Zoom to State
+                        </a>
+
+                        <div class="lul-data__dropdown" id="lul-sb-jzdropdown">
                             <a
                                 href="#"
                                 role="button"
-                                class="lul-data__btn lul-data__btn--primary lul-data__toggle"
-                                id="lul-sb-unlock"
+                                class="lul-data__btn lul-data__btn--tertiary lul-data__toggle"
+                                id="lul-sb-jztoggle"
                             >
-                                Unlock Data for this Geography
+                                Find Jurisdiction
                                 <svg
                                     viewBox="0 0 20 20"
                                     fill="none"
@@ -627,48 +772,52 @@
                                 </svg>
                             </a>
                             <div class="lul-data__menu">
-                                <a class="lul-data__option" href="https://landuselabs.com/slices#order">Slices</a>
+                                <input
+                                    type="text"
+                                    class="lul-jz-search"
+                                    id="lul-sb-jzsearch"
+                                    placeholder="Search jurisdictions"
+                                    autocomplete="off"
+                                />
+                                <div class="lul-jz-list" id="lul-sb-jzlist"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lul-statbox-unlock lul-data-actions">
+                        <div class="lul-data__dropdown" id="lul-sb-dropdown">
+                            <a
+                                href="#"
+                                role="button"
+                                class="lul-data__btn lul-data__btn--primary lul-data__toggle"
+                                id="lul-sb-unlock"
+                            >
+                                Access Data for this Geography
+                                <svg
+                                    viewBox="0 0 20 20"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    aria-hidden="true"
+                                >
+                                    <path
+                                        d="M5 8l5 5 5-5"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </svg>
+                            </a>
+                            <div class="lul-data__menu">
                                 <a class="lul-data__option" href="https://landuselabs.com/districts#order">Districts</a>
                                 <a class="lul-data__option" href="https://landuselabs.com/rasters#order">Rasters</a>
+                                <a class="lul-data__option" href="https://landuselabs.com/slices#order">Slices</a>
                                 <a class="lul-data__option" href="https://landuselabs.com/tables#order">Tables</a>
                             </div>
                         </div>
                     </div>
 
-                    <div class="lul-statbox-prompt" id="lul-sb-prompt">Not sure what product is right?</div>
-
-                    <div class="lul-statbox-actions lul-data-actions">
-                        <a
-                            class="lul-data__btn lul-data__btn--primary"
-                            id="lul-sb-product"
-                            href="https://landuselabs.com/product-selection"
-                            >Find Product
-                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <path
-                                    d="M4 10h12m0 0l-5-5m5 5l-5 5"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                />
-                            </svg>
-                        </a>
-                        <a
-                            class="lul-data__btn lul-data__btn--secondary"
-                            id="lul-sb-contact"
-                            href="https://landuselabs.com/contact"
-                            >Contact Us
-                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                <path
-                                    d="M4 10h12m0 0l-5-5m5 5l-5 5"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                />
-                            </svg>
-                        </a>
-                    </div>
+                    <div class="lul-statbox-prompt" id="lul-sb-prompt"></div>
                 </div>
             </div>
         </section>
@@ -680,20 +829,18 @@
                 // Live status for every jurisdiction. The local file is a snapshot fallback
                 // for when the API can't be reached; the API is the source of truth.
                 var JURISDICTIONS_API = "https://api.zoningatlas.org/atlas_jurisdictions";
-                var JURISDICTIONS_SNAPSHOT = "atlas_jurisdictions.json";
+                var JURISDICTIONS_SNAPSHOT = "data/atlas_jurisdictions.json";
 
                 // Geometry, built by build_coverage_data.py. Rerun that when boundaries change.
                 var STATES_GEOJSON = "data/states.geojson";
                 var JURISDICTION_TILES = "pmtiles://data/jurisdictions.pmtiles";
                 // One label anchor per jurisdiction, so multi-part ones aren't named twice.
                 var JURISDICTION_LABEL_TILES = "pmtiles://data/jurisdiction_labels.pmtiles";
-                // Published jurisdictions with no zoning. Generated by build_coverage_data.py
-                // because the API doesn't expose has_zoning yet.
-                var NO_ZONING_IDS = "data/no_zoning_ids.json";
 
-                // Destination for the two panel buttons. {abbr} and {state} are substituted.
-                var PRODUCT_URL = "https://landuselabs.com/product-selection?state={abbr}";
-                var CONTACT_URL = "https://landuselabs.com/contact?state={abbr}";
+                // Bounding box per jurisdiction, {id: [w, s, e, n]}, built by
+                // build_coverage_data.py. Fetched lazily, only once someone opens the
+                // jurisdiction picker, since it's a couple of MB nobody else needs.
+                var JURISDICTION_BOUNDS = "data/jurisdiction_bounds.json";
 
                 // Basemaps. Switch by changing BASEMAP. Each entry names the schema-specific
                 // bits our own layers need to agree with: which source-layers to strip, and a
@@ -735,9 +882,13 @@
                 var STATE_FADE_TO = 0.7;
                 var JURISDICTION_FADE_FROM = 0.5;
 
-                // States are shaded by how much of them is published, so a state that's
-                // 4% done doesn't read the same as one that's finished. Tints of the
-                // brand purple; 0% falls through to the no-data grey.
+                // Hover keeps a feature's own fill and just leans on the opacity, so the
+                // colour never shifts out of the legend's scale.
+                var HOVER_OPACITY_BUMP = 0.18;
+
+                // States are shaded by the share of their population we cover, so a state
+                // that's 4% done doesn't read the same as one that's finished. Tints of
+                // the brand purple; 0% falls through to the no-data grey.
                 var STATE_STEPS = [
                     { min: 1, color: "#BAB8BF", label: "1–25%" },
                     { min: 26, color: "#928F9A", label: "26–50%" },
@@ -746,19 +897,28 @@
                 ];
 
                 var COVERED_FILL = "#393348";
-                var HOVER_FILL = "#4C4460";
                 var NO_DATA_FILL = "#EFEDEC"; // states we have nothing for
-                var UNPUBLISHED_FILL = "#D2D0CE"; // jurisdictions that exist but aren't published
-                var UNPUBLISHED_HOVER = "#BFBCB9";
-                var NO_ZONING_FILL = "#9A9691"; // published, but the jurisdiction has no zoning
-                var NO_ZONING_HOVER = "#83807B";
+                var UNAVAILABLE_FILL = "#D2D0CE"; // jurisdictions we can't offer data for yet
                 var ACCENT = "#C9D0A0";
+
+                // Continental US. The state file also carries AK, HI and the territories,
+                // so fitting everything would zoom out past the lower 48.
+                var CONUS_BOUNDS = [
+                    [-125.2, 24.2],
+                    [-66.7, 49.6],
+                ];
 
                 var el = function (id) {
                     return document.getElementById(id);
                 };
                 var fmt = function (n) {
                     return typeof n === "number" ? n.toLocaleString("en-US") : "—";
+                };
+                // Jurisdiction names come from the API and go into innerHTML.
+                var esc = function (s) {
+                    return String(s).replace(/[&<>"]/g, function (c) {
+                        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+                    });
                 };
 
                 // ---------- map ----------
@@ -793,12 +953,36 @@
                         });
                 }
 
+                // Map-level control: frames the lower 48 again from wherever you are.
+                // Greys out once you're already there, and comes back when you move off.
+                var nationalViewControl = {
+                    button: null,
+                    onAdd: function () {
+                        var wrap = document.createElement("div");
+                        wrap.className = "maplibregl-ctrl maplibregl-ctrl-group lul-national";
+                        var btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.textContent = "Zoom to National View";
+                        btn.addEventListener("click", function () {
+                            fitToContinentalUS(true);
+                        });
+                        wrap.appendChild(btn);
+                        this.button = btn;
+                        this.container = wrap;
+                        return wrap;
+                    },
+                    onRemove: function () {
+                        this.container.parentNode.removeChild(this.container);
+                        this.button = null;
+                    },
+                };
+
                 function createMap(style) {
                     map = new maplibregl.Map({
                         container: "lul-coverage-map",
                         style: style,
-                        center: [-96, 38],
-                        zoom: 3.2,
+                        center: [-98.5, 39.5],
+                        zoom: 3.6,
                         minZoom: 2,
                         maxZoom: 13,
                         attributionControl: false,
@@ -807,18 +991,21 @@
                         touchZoomRotate: true,
                     });
                     map.touchZoomRotate.disableRotation();
-                    // controls stack in the order they're added
+                    // Credits live over by the legend, out of the way of the controls.
                     map.addControl(
                         new maplibregl.AttributionControl({
                             compact: true,
                             customAttribution: BASEMAP.attribution,
                         }),
-                        "bottom-right",
+                        "bottom-left",
                     );
+                    // The bottom corners lay their controls out bottom-up, so the one
+                    // added first sits lowest: national view underneath, zoom above it.
+                    map.addControl(nationalViewControl, "bottom-right");
                     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
 
                     // Start the attribution collapsed to the ⓘ so its text doesn't run
-                    // across the bottom into the legend. Click still reveals the credits.
+                    // across the bottom of the map. Click still reveals the credits.
                     var attrib = map.getContainer().querySelector(".maplibregl-ctrl-attrib");
                     if (attrib) attrib.classList.remove("maplibregl-compact-show");
 
@@ -845,42 +1032,80 @@
 
                 // ---------- data ----------
                 var jurisdictionById = {}; // id -> API record
-                var stateStats = {}; // state_id -> { total, published, name }
-                var noZoningIds = null; // Set of ids, from the side file
+                var stateStats = {}; // state_id -> { available, population, availablePopulation, name }
+                var jurisdictionsByState = {}; // state_id -> [{ id, name }], sorted by name
+                var stateBounds = {}; // state_id -> LngLatBounds, off the geometry we load
+                var stateProps = {}; // state_id -> the joined feature properties
+                var zoomStateId = null; // state the open panel is for, if it's a state
+                var zoomOutStateId = null; // its parent state, if the panel is a jurisdiction
+                var openStateAbbr = ""; // postcode of the last state panel opened
+                var jurisdictionBounds = null; // id -> [w, s, e, n], lazily fetched
+                var boundsRequest = null; // in-flight/settled fetch of the above
+                var boundsFailed = false;
 
-                // Prefer the API if it ever grows a has_zoning field; until then fall back
-                // to the generated id list. zone_count is NOT a safe stand-in for this.
-                function hasZoning(rec) {
-                    if (!rec) return true;
-                    if (typeof rec.has_zoning === "boolean") return rec.has_zoning;
-                    if (typeof rec.haszoning === "boolean") return rec.haszoning;
-                    return !(noZoningIds && noZoningIds.has(rec.id));
+                function loadJurisdictionBounds() {
+                    if (boundsRequest) return boundsRequest;
+                    boundsRequest = fetch(JURISDICTION_BOUNDS)
+                        .then(function (r) {
+                            if (!r.ok) throw new Error("HTTP " + r.status);
+                            return r.json();
+                        })
+                        .then(function (data) {
+                            jurisdictionBounds = data;
+                        })
+                        .catch(function (err) {
+                            // Generated by build_coverage_data.py; without it there's
+                            // nowhere to fly, so the picker says so rather than going dead.
+                            console.warn("Jurisdiction bounds unavailable:", err);
+                            boundsFailed = true;
+                        });
+                    return boundsRequest;
                 }
 
+                // The only distinction the map draws: can we hand over data for this
+                // jurisdiction today? A published jurisdiction with no zoning can't be
+                // sold, so it reads the same as one we haven't published — no separate
+                // colour, and nothing that gives away its publication status.
+                // has_zoning is null for jurisdictions we haven't looked at yet, which
+                // are unpublished anyway, so plain truthiness is enough.
+                function isAvailable(rec) {
+                    return !!(rec && rec.published && rec.has_zoning);
+                }
+
+                // Coverage is measured by population, not by counting jurisdictions:
+                // a state whose big cities are done is far more complete than a state
+                // with the same number of small towns finished.
                 function indexJurisdictions(rows) {
                     rows.forEach(function (r) {
                         jurisdictionById[r.id] = r;
+
                         var s = stateStats[r.state_id];
                         if (!s) {
-                            s = stateStats[r.state_id] = { total: 0, published: 0, name: r.state_name };
+                            s = stateStats[r.state_id] = {
+                                available: 0,
+                                population: 0,
+                                availablePopulation: 0,
+                                name: r.state_name,
+                            };
                         }
-                        s.total += 1;
-                        if (r.published) s.published += 1;
-                    });
-                }
+                        var pop = r.population || 0;
+                        s.population += pop;
+                        if (isAvailable(r)) {
+                            s.available += 1;
+                            s.availablePopulation += pop;
+                        }
 
-                function renderRollup(rows) {
-                    var pub = 0;
-                    rows.forEach(function (r) {
-                        if (r.published) pub += 1;
+                        (jurisdictionsByState[r.state_id] || (jurisdictionsByState[r.state_id] = [])).push({
+                            id: r.id,
+                            name: r.name,
+                        });
                     });
-                    el("lul-rollup").innerHTML =
-                        '<div><div class="lul-rollup-num">' +
-                        fmt(rows.length) +
-                        '</div><div class="lul-rollup-label">Total Jurisdictions</div></div>' +
-                        '<div><div class="lul-rollup-num">' +
-                        fmt(pub) +
-                        '</div><div class="lul-rollup-label">Published</div></div>';
+
+                    Object.keys(jurisdictionsByState).forEach(function (sid) {
+                        jurisdictionsByState[sid].sort(function (a, b) {
+                            return a.name.localeCompare(b.name);
+                        });
+                    });
                 }
 
                 // Stamp the per-state rollups onto the state polygons so the paint
@@ -888,15 +1113,34 @@
                 function joinStates(geojson) {
                     geojson.features.forEach(function (f) {
                         var s = stateStats[f.properties.id];
-                        var total = s ? s.total : 0;
-                        var published = s ? s.published : 0;
-                        f.properties.total_jurisdictions = total;
-                        f.properties.published_jurisdictions = published;
-                        f.properties.percentage = total ? Math.round((published / total) * 100) : -1;
+                        var population = s ? s.population : 0;
+                        var covered = s ? s.availablePopulation : 0;
+                        f.properties.population = population;
+                        f.properties.covered_population = covered;
+                        f.properties.percentage = population ? Math.round((covered / population) * 100) : -1;
                         // 0% counts as no coverage, same grey as a state we have nothing for.
-                        f.properties.isCovered = published > 0;
+                        f.properties.isCovered = covered > 0;
                     });
                     return geojson;
+                }
+
+                // Extent and joined properties per state: the bounds for the zoom
+                // controls, the properties for rebuilding a state panel without a click
+                // on the map. Taken off the geometry the choropleth already draws.
+                function indexStates(geojson) {
+                    geojson.features.forEach(function (f) {
+                        var b = new maplibregl.LngLatBounds();
+                        var walk = function (c) {
+                            if (typeof c[0] === "number") {
+                                b.extend(c);
+                                return;
+                            }
+                            c.forEach(walk);
+                        };
+                        walk(f.geometry.coordinates);
+                        stateBounds[f.properties.id] = b;
+                        stateProps[f.properties.id] = f.properties;
+                    });
                 }
 
                 // MapLibre places a symbol on every part of a MultiPolygon, so states with
@@ -973,6 +1217,25 @@
                     return expr;
                 }
 
+                // Zoom-driven opacity ramp, nudged up while a feature is hovered and, if
+                // asked, held at full while it stays selected.
+                // The ["zoom"] interpolate has to stay the outermost expression —
+                // MapLibre rejects a zoom expression nested inside a "case", so the
+                // state tests go in each stop's output instead of wrapping the ramp.
+                function hoverableOpacity(stops, holdSelected) {
+                    var expr = ["interpolate", ["linear"], ["zoom"]];
+                    stops.forEach(function (s) {
+                        var hovered = Math.min(1, s[1] + HOVER_OPACITY_BUMP);
+                        var out = ["case"];
+                        if (holdSelected) {
+                            out.push(["boolean", ["feature-state", "selected"], false], 1);
+                        }
+                        out.push(["boolean", ["feature-state", "hover"], false], hovered, s[1]);
+                        expr.push(s[0], out);
+                    });
+                    return expr;
+                }
+
                 // ---------- layers ----------
                 function addStateLayers(geojson, beforeId) {
                     map.addSource("states", { type: "geojson", data: geojson, promoteId: "id" });
@@ -986,22 +1249,15 @@
                             paint: {
                                 "fill-color": [
                                     "case",
-                                    ["boolean", ["feature-state", "hover"], false],
-                                    HOVER_FILL,
                                     ["==", ["get", "isCovered"], false],
                                     NO_DATA_FILL,
                                     stateStepExpression(),
                                 ],
                                 // ease off approaching the handoff to jurisdictions
-                                "fill-opacity": [
-                                    "interpolate",
-                                    ["linear"],
-                                    ["zoom"],
-                                    SWAP_ZOOM - FADE,
-                                    0.78,
-                                    SWAP_ZOOM,
-                                    STATE_FADE_TO,
-                                ],
+                                "fill-opacity": hoverableOpacity([
+                                    [SWAP_ZOOM - FADE, 0.78],
+                                    [SWAP_ZOOM, STATE_FADE_TO],
+                                ]),
                             },
                         },
                         beforeId,
@@ -1014,13 +1270,8 @@
                             source: "states",
                             maxzoom: SWAP_ZOOM,
                             paint: {
-                                "line-color": [
-                                    "case",
-                                    ["boolean", ["feature-state", "selected"], false],
-                                    ACCENT,
-                                    "rgba(255,255,255,0.9)",
-                                ],
-                                "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3, 0.9],
+                                "line-color": "rgba(255,255,255,0.9)",
+                                "line-width": 0.9,
                             },
                         },
                         beforeId,
@@ -1043,12 +1294,7 @@
                         },
                         paint: {
                             // the two lighter tints need dark type; the two darker ones need white
-                            "text-color": [
-                                "case",
-                                [">=", ["get", "percentage"], 51],
-                                "#FFFFFF",
-                                "rgba(57,51,72,0.75)",
-                            ],
+                            "text-color": ["case", [">=", ["get", "percentage"], 51], "#FFFFFF", "rgba(57,51,72,0.75)"],
                             "text-halo-color": [
                                 "case",
                                 [">=", ["get", "percentage"], 51],
@@ -1058,6 +1304,31 @@
                             "text-halo-width": 1,
                         },
                     });
+                }
+
+                // The accent outline of whichever state the panel is about. Its own layer,
+                // with no maxzoom, so it survives the handoff to jurisdictions — down
+                // among them it's the only thing still saying which state you're in.
+                // Added after the jurisdiction fills, or it would be painted over by
+                // them: layers sharing a beforeId stack in the order they're added.
+                // Driven by a `focus` state rather than `selected`, since it stays lit
+                // while a jurisdiction inside it is the selected feature.
+                function addStateFocusLayer(beforeId) {
+                    map.addLayer(
+                        {
+                            id: "states-focus-line",
+                            type: "line",
+                            source: "states",
+                            paint: {
+                                "line-color": ACCENT,
+                                // a touch heavier once you're in among the jurisdictions,
+                                // where only a short stretch of the border is on screen
+                                "line-width": ["interpolate", ["linear"], ["zoom"], 4, 2.5, 8, 3.5],
+                                "line-opacity": ["case", ["boolean", ["feature-state", "focus"], false], 1, 0],
+                            },
+                        },
+                        beforeId,
+                    );
                 }
 
                 function addJurisdictionLayers(beforeId) {
@@ -1077,38 +1348,19 @@
                             paint: {
                                 "fill-color": [
                                     "case",
-                                    // hover states, most specific first
-                                    [
-                                        "all",
-                                        ["boolean", ["feature-state", "hover"], false],
-                                        ["boolean", ["feature-state", "noZoning"], false],
-                                    ],
-                                    NO_ZONING_HOVER,
-                                    [
-                                        "all",
-                                        ["boolean", ["feature-state", "hover"], false],
-                                        ["boolean", ["feature-state", "published"], false],
-                                    ],
-                                    HOVER_FILL,
-                                    ["boolean", ["feature-state", "hover"], false],
-                                    UNPUBLISHED_HOVER,
-                                    // resting states
-                                    ["boolean", ["feature-state", "noZoning"], false],
-                                    NO_ZONING_FILL,
-                                    ["boolean", ["feature-state", "published"], false],
+                                    ["boolean", ["feature-state", "available"], false],
                                     COVERED_FILL,
-                                    UNPUBLISHED_FILL,
+                                    UNAVAILABLE_FILL,
                                 ],
-                                // fade in as the state fills drop away
-                                "fill-opacity": [
-                                    "interpolate",
-                                    ["linear"],
-                                    ["zoom"],
-                                    SWAP_ZOOM,
-                                    JURISDICTION_FADE_FROM,
-                                    SWAP_ZOOM + FADE,
-                                    0.8,
-                                ],
+                                // fade in as the state fills drop away; a selected
+                                // jurisdiction holds full opacity under its accent outline
+                                "fill-opacity": hoverableOpacity(
+                                    [
+                                        [SWAP_ZOOM, JURISDICTION_FADE_FROM],
+                                        [SWAP_ZOOM + FADE, 0.8],
+                                    ],
+                                    true,
+                                ),
                             },
                         },
                         beforeId,
@@ -1164,13 +1416,13 @@
                         paint: {
                             "text-color": [
                                 "case",
-                                ["boolean", ["feature-state", "published"], false],
+                                ["boolean", ["feature-state", "available"], false],
                                 "#FFFFFF",
                                 "rgba(57,51,72,0.75)",
                             ],
                             "text-halo-color": [
                                 "case",
-                                ["boolean", ["feature-state", "published"], false],
+                                ["boolean", ["feature-state", "available"], false],
                                 "rgba(57,51,72,0.5)",
                                 "rgba(255,255,255,0.9)",
                             ],
@@ -1179,26 +1431,23 @@
                     });
                 }
 
-                // Published status lives in the API, not the tiles, so it's applied as
-                // feature state. MapLibre keeps this keyed by id and reapplies it to each
-                // tile as it loads, so it's safe to set before any tile has arrived.
-                // Feature state is per-source, so the label tiles need it too or every
-                // label would fall through to the unpublished styling.
-                function applyPublishedState() {
+                // Availability lives in the API, not the tiles, so it's applied as feature
+                // state. MapLibre keeps this keyed by id and reapplies it to each tile as
+                // it loads, so it's safe to set before any tile has arrived. Feature state
+                // is per-source, so the label tiles need it too or every label would fall
+                // through to the unavailable styling.
+                function applyAvailableState() {
                     var targets = [
                         { source: "jurisdictions", sourceLayer: "jurisdictions" },
                         { source: "jurisdiction-labels", sourceLayer: "jurisdiction_labels" },
                     ];
                     var n = 0;
                     Object.keys(jurisdictionById).forEach(function (id) {
-                        var rec = jurisdictionById[id];
-                        if (!rec.published) return;
-                        var state = { published: true };
-                        if (!hasZoning(rec)) state.noZoning = true;
+                        if (!isAvailable(jurisdictionById[id])) return;
                         targets.forEach(function (t) {
                             map.setFeatureState(
                                 { source: t.source, sourceLayer: t.sourceLayer, id: Number(id) },
-                                state,
+                                { available: true },
                             );
                         });
                         n++;
@@ -1206,19 +1455,13 @@
                     return n;
                 }
 
-                function fitToStates(geojson) {
-                    var b = new maplibregl.LngLatBounds();
-                    geojson.features.forEach(function (f) {
-                        var walk = function (c) {
-                            if (typeof c[0] === "number") {
-                                b.extend(c);
-                                return;
-                            }
-                            c.forEach(walk);
-                        };
-                        walk(f.geometry.coordinates);
+                // Animated only when the user asks for it; the first fit happens before
+                // anyone is looking.
+                function fitToContinentalUS(animated) {
+                    map.fitBounds(CONUS_BOUNDS, {
+                        padding: fitPadding(),
+                        duration: animated ? 900 : 0,
                     });
-                    map.fitBounds(b, { padding: { top: 30, bottom: 40, left: 30, right: 30 }, duration: 0 });
                 }
 
                 // ---------- interaction ----------
@@ -1245,6 +1488,21 @@
                     if (selected) map.setFeatureState(selected, { selected: true });
                 }
 
+                // Which state's outline stays lit: the selected state, or the one holding
+                // the selected jurisdiction.
+                var focusedStateId = null;
+                function setFocusState(stateId) {
+                    var next = stateId == null ? null : Number(stateId);
+                    if (next === focusedStateId) return;
+                    if (focusedStateId != null) {
+                        map.setFeatureState({ source: "states", id: focusedStateId }, { focus: false });
+                    }
+                    focusedStateId = next;
+                    if (focusedStateId != null) {
+                        map.setFeatureState({ source: "states", id: focusedStateId }, { focus: true });
+                    }
+                }
+
                 function showTip(html, point) {
                     tip.innerHTML = html;
                     tip.classList.add("is-visible");
@@ -1268,39 +1526,67 @@
                     tip.classList.remove("is-visible");
                 }
 
-                function subUrl(tpl, vars) {
-                    return tpl
-                        .replace("{abbr}", encodeURIComponent(vars.abbr || ""))
-                        .replace("{state}", encodeURIComponent(vars.state || ""));
-                }
-
                 function row(label, value) {
                     return '<div class="lul-statrow"><span>' + label + "</span><b>" + value + "</b></div>";
                 }
 
-                var PROMPTS = {
-                    published: "Not sure what product is right?",
-                    unpublished: "This data is unpublished. Check back or contact us for questions.",
-                    nozoning: "This jurisdiction is published but has no zoning.",
-                };
+                // Same row, but the value is the way back out to that state.
+                function stateRow(name, stateId) {
+                    return (
+                        '<div class="lul-statrow lul-statrow--zoom"><span>State</span>' +
+                        '<button type="button" class="lul-statrow-zoom" data-state="' +
+                        stateId +
+                        '" title="Zoom to ' +
+                        esc(name) +
+                        '">' +
+                        '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+                        '<circle cx="9" cy="9" r="5.25" stroke="currentColor" stroke-width="2"/>' +
+                        '<path d="M6.75 9h4.5M13 13l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+                        "</svg>" +
+                        esc(name) +
+                        "</button></div>"
+                    );
+                }
+
+                var UNAVAILABLE_NOTE = "This data isn't available yet. Check back soon.";
+
+                // Both panel dropdowns behave the same way: the toggle opens its own menu
+                // and closes the other, and a click anywhere else closes both.
+                var DROPDOWNS = [
+                    { menu: "lul-sb-dropdown", toggle: "lul-sb-unlock" },
+                    { menu: "lul-sb-jzdropdown", toggle: "lul-sb-jztoggle" },
+                ];
 
                 function closeDropdown() {
-                    el("lul-sb-dropdown").classList.remove("lul-is-open");
+                    DROPDOWNS.forEach(function (d) {
+                        el(d.menu).classList.remove("lul-is-open");
+                    });
                 }
 
                 function wireDropdown() {
-                    var dd = el("lul-sb-dropdown");
-                    el("lul-sb-unlock").addEventListener("click", function (e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        dd.classList.toggle("lul-is-open");
+                    DROPDOWNS.forEach(function (d) {
+                        var dd = el(d.menu);
+                        el(d.toggle).addEventListener("click", function (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            var open = dd.classList.contains("lul-is-open");
+                            closeDropdown();
+                            if (!open) {
+                                dd.classList.add("lul-is-open");
+                                if (d.menu === "lul-sb-jzdropdown") el("lul-sb-jzsearch").focus();
+                            }
+                        });
                     });
                     document.addEventListener("click", function (e) {
-                        if (!dd.contains(e.target)) closeDropdown();
+                        var inside = DROPDOWNS.some(function (d) {
+                            return el(d.menu).contains(e.target);
+                        });
+                        if (!inside) closeDropdown();
                     });
                 }
 
                 function openBox(opts) {
+                    el("lul-sb-kind").textContent = opts.kind || "";
                     var abbr = el("lul-sb-abbr");
                     abbr.textContent = opts.abbr || "";
                     abbr.style.display = opts.abbr ? "inline-block" : "none";
@@ -1312,31 +1598,14 @@
                     if (opts.bar != null) el("lul-sb-bar").style.width = opts.bar + "%";
                     el("lul-sb-rows").innerHTML = opts.rows;
 
-                    var unpublished = !!opts.unpublished;
+                    var unavailable = !!opts.unavailable;
 
-                    var prompt = el("lul-sb-prompt");
-                    prompt.textContent = PROMPTS[opts.promptKey] || PROMPTS.published;
-                    prompt.classList.toggle("is-unpublished", unpublished);
-
-                    // nothing to unlock for an unpublished jurisdiction
+                    // nothing to unlock for a jurisdiction we can't offer data for yet
                     closeDropdown();
-                    el("lul-sb-unlock").classList.toggle("is-disabled", unpublished);
+                    el("lul-sb-unlock").classList.toggle("is-disabled", unavailable);
+                    el("lul-sb-prompt").textContent = unavailable ? UNAVAILABLE_NOTE : "";
 
-                    // Find Product is dead when unpublished; Contact keeps its normal
-                    // styling, since it stays a live link.
-                    var product = el("lul-sb-product");
-                    product.classList.toggle("is-disabled", unpublished);
-                    if (unpublished) {
-                        product.removeAttribute("href");
-                        product.setAttribute("aria-disabled", "true");
-                    } else {
-                        product.href = subUrl(PRODUCT_URL, opts);
-                        product.removeAttribute("aria-disabled");
-                    }
-
-                    var contact = el("lul-sb-contact");
-                    contact.href = subUrl(CONTACT_URL, opts);
-                    contact.removeAttribute("aria-disabled");
+                    showZoomControls(opts);
 
                     statbox.classList.add("is-open");
                 }
@@ -1345,44 +1614,210 @@
                     closeDropdown();
                     statbox.classList.remove("is-open");
                     setSelected(null);
+                    setFocusState(null);
+                }
+
+                // ---------- zooming ----------
+                // Even padding, so whatever we fly to lands in the middle of the map.
+                // The panel overlaps the right edge, but reserving room for it threw
+                // everything off-centre, which reads worse than the overlap.
+                function fitPadding(extra) {
+                    return 30 + (extra || 0);
+                }
+
+                function zoomToStateBounds(stateId) {
+                    var b = stateBounds[stateId];
+                    if (b) map.fitBounds(b, { padding: fitPadding(), duration: 900 });
+                }
+
+                // The State row on a jurisdiction panel: hand the panel back to that
+                // state and re-select it, then frame it. Worth doing even when the camera
+                // is already on the state — the point is the panel, not just the camera.
+                function backToState(stateId) {
+                    var props = stateProps[stateId];
+                    if (!props) return;
+                    setSelected({ source: "states", id: Number(stateId) });
+                    openStateBox(props);
+                    zoomToStateBounds(stateId);
+                }
+
+                // A button that would land you exactly where you already are has nothing
+                // to do, so it greys out until the map moves off that framing.
+                function cameraFor(bounds) {
+                    return bounds ? map.cameraForBounds(bounds, { padding: fitPadding() }) : null;
+                }
+
+                function atCamera(cam) {
+                    if (!cam) return false;
+                    if (Math.abs(map.getZoom() - cam.zoom) > 0.05) return false;
+                    // compare on screen, so the tolerance means the same thing at every zoom
+                    var target = map.project(maplibregl.LngLat.convert(cam.center));
+                    var here = map.project(map.getCenter());
+                    return Math.abs(target.x - here.x) < 6 && Math.abs(target.y - here.y) < 6;
+                }
+
+                // No is-open guard: openBox sets the panel's state before it opens it,
+                // and when the panel is closed these buttons aren't on screen anyway.
+                function updateZoomButtons() {
+                    el("lul-sb-zoomstate").classList.toggle(
+                        "is-disabled",
+                        zoomStateId != null && atCamera(cameraFor(stateBounds[zoomStateId])),
+                    );
+                    if (nationalViewControl.button) {
+                        nationalViewControl.button.disabled = atCamera(cameraFor(CONUS_BOUNDS));
+                    }
+                }
+
+                // Goes through the loader so a pick made before the bounds file lands
+                // still flies once it does.
+                function zoomToJurisdiction(id) {
+                    loadJurisdictionBounds().then(function () {
+                        var b = jurisdictionBounds && jurisdictionBounds[id];
+                        if (!b) return;
+                        map.fitBounds(
+                            [
+                                [b[0], b[1]],
+                                [b[2], b[3]],
+                            ],
+                            // Sit back from the boundary rather than filling the frame
+                            // with it: the neighbours are the context. maxZoom keeps a
+                            // small jurisdiction from flying past what the tiles carry.
+                            { padding: fitPadding(40), maxZoom: 10.5, duration: 900 },
+                        );
+                    });
+                }
+
+                // Picking from the list does what clicking the polygon does — swaps the
+                // panel over to that jurisdiction — and then flies there.
+                function selectJurisdiction(id) {
+                    var rec = jurisdictionById[id];
+                    if (!rec) return;
+                    closeDropdown();
+                    setSelected({ source: "jurisdictions", sourceLayer: "jurisdictions", id: Number(id) });
+                    openJurisdictionBox({ id: Number(id), name: rec.name, st: openStateAbbr });
+                    zoomToJurisdiction(id);
+                }
+
+                // Long lists are the norm — Pennsylvania alone has ~2,500 — so render a
+                // slice and let the search box do the narrowing.
+                var JZ_LIMIT = 200;
+
+                function renderJurisdictionList() {
+                    var list = el("lul-sb-jzlist");
+                    var all = jurisdictionsByState[zoomStateId] || [];
+                    var q = el("lul-sb-jzsearch").value.trim().toLowerCase();
+                    var matches = q
+                        ? all.filter(function (j) {
+                              return j.name.toLowerCase().indexOf(q) !== -1;
+                          })
+                        : all;
+
+                    if (!matches.length) {
+                        list.innerHTML = '<div class="lul-jz-note">No jurisdictions match.</div>';
+                        return;
+                    }
+                    var html = matches
+                        .slice(0, JZ_LIMIT)
+                        .map(function (j) {
+                            return (
+                                '<button type="button" class="lul-jz-item" data-id="' +
+                                j.id +
+                                '">' +
+                                esc(j.name) +
+                                "</button>"
+                            );
+                        })
+                        .join("");
+                    if (matches.length > JZ_LIMIT) {
+                        html +=
+                            '<div class="lul-jz-note">' +
+                            fmt(matches.length - JZ_LIMIT) +
+                            " more — keep typing to narrow.</div>";
+                    }
+                    list.innerHTML = html;
+                }
+
+                // Navigation belongs to the state panel: framing a state and drilling into
+                // it. A jurisdiction panel is the end of the line, so it carries none —
+                // it only notes its parent state, to keep that outline lit.
+                function showZoomControls(opts) {
+                    zoomStateId = opts.stateId == null ? null : Number(opts.stateId);
+                    zoomOutStateId = opts.parentStateId == null ? null : Number(opts.parentStateId);
+                    var isState = zoomStateId != null;
+
+                    el("lul-sb-zoom").classList.toggle("is-hidden", !isState);
+                    el("lul-sb-jzdropdown").classList.toggle("is-hidden", !isState || boundsFailed);
+                    setFocusState(isState ? zoomStateId : zoomOutStateId);
+                    updateZoomButtons();
+                    if (!isState) return;
+
+                    el("lul-sb-jzsearch").value = "";
+                    renderJurisdictionList();
+                    // Warm the bounds file now so the first pick doesn't sit waiting on
+                    // it. With no bounds there's nowhere to fly, so drop the picker
+                    // rather than offer a list that does nothing.
+                    loadJurisdictionBounds().then(function () {
+                        if (boundsFailed) el("lul-sb-jzdropdown").classList.add("is-hidden");
+                    });
+                }
+
+                function wireZoomControls() {
+                    el("lul-sb-zoomstate").addEventListener("click", function (e) {
+                        e.preventDefault();
+                        zoomToStateBounds(zoomStateId);
+                    });
+                    // re-check after every camera change, ours or the user's
+                    map.on("moveend", updateZoomButtons);
+                    el("lul-sb-rows").addEventListener("click", function (e) {
+                        var btn = e.target.closest(".lul-statrow-zoom");
+                        if (btn) backToState(Number(btn.getAttribute("data-state")));
+                    });
+                    el("lul-sb-jzsearch").addEventListener("input", renderJurisdictionList);
+                    el("lul-sb-jzlist").addEventListener("click", function (e) {
+                        var item = e.target.closest(".lul-jz-item");
+                        if (item) selectJurisdiction(item.getAttribute("data-id"));
+                    });
                 }
 
                 function stateTip(p) {
                     return (
                         "<b>" +
-                        (p.postcode || p.name) +
+                        (p.name || p.postcode) +
                         "</b><div class='lul-hovertip-pct'>" +
                         p.percentage +
-                        "% published</div>"
+                        "%</div><div class='lul-hovertip-note'>Population covered</div>"
                     );
                 }
 
                 function openStateBox(p) {
+                    // the picker builds jurisdiction panels, which need the state's chip
+                    openStateAbbr = p.postcode || "";
                     openBox({
+                        kind: "State",
                         abbr: p.postcode,
                         name: p.name,
-                        state: p.name,
-                        headline: p.percentage + "%<small>published</small>",
+                        stateId: p.id,
+                        headline: p.percentage + "%<small>population covered</small>",
                         bar: p.percentage,
-                        rows:
-                            row("Total jurisdictions", fmt(p.total_jurisdictions)) +
-                            row("Published", fmt(p.published_jurisdictions)) +
-                            row("Remaining", fmt(p.total_jurisdictions - p.published_jurisdictions)),
+                        rows: "",
                     });
                 }
 
-                // three states: published with zoning, published with none, unpublished
+                // two states only: we can hand over data, or we can't yet
                 function jurisdictionStatus(rec) {
-                    if (!rec || !rec.published) return { key: "unpublished", label: "Not yet published" };
-                    if (!hasZoning(rec)) return { key: "nozoning", label: "No zoning" };
-                    return { key: "published", label: "Published" };
+                    return isAvailable(rec)
+                        ? { key: "available", label: "Available" }
+                        : { key: "unavailable", label: "Not yet available" };
                 }
 
                 function jurisdictionTip(p) {
-                    var status = jurisdictionStatus(jurisdictionById[p.id]);
+                    var rec = jurisdictionById[p.id];
+                    var status = jurisdictionStatus(rec);
+                    // The tiles only carry the postcode, so the full name comes off the
+                    // API record; fall back to the abbreviation if it hasn't loaded.
                     return (
                         "<b>" +
-                        (p.st || "") +
+                        ((rec && rec.state_name) || p.st || "") +
                         "</b><div class='lul-hovertip-pct'>" +
                         p.name +
                         "</div><div class='lul-hovertip-note'>" +
@@ -1397,30 +1832,18 @@
                     var rows = "";
                     if (rec) {
                         rows += row("County", rec.county_name || "—");
-                        rows += row("State", rec.state_name || "—");
-                        if (rec.published) {
-                            if (status.key === "published") {
-                                rows += row("Zoning districts", fmt(rec.zone_count));
-                            }
-                            rows += row("Last updated", rec.updated || "—");
-                        }
+                        rows += rec.state_name ? stateRow(rec.state_name, rec.state_id) : row("State", "—");
                     }
                     openBox({
+                        kind: "Jurisdiction",
                         abbr: p.st,
                         name: p.name,
-                        state: rec ? rec.state_name : "",
-                        headline:
-                            '<span class="lul-pill is-' +
-                            status.key +
-                            '">' +
-                            status.label +
-                            "</span>",
+                        headline: '<span class="lul-pill is-' + status.key + '">' + status.label + "</span>",
                         pill: true,
                         bar: null,
                         rows: rows,
-                        // nothing to sell in either case, but contact stays open
-                        unpublished: status.key !== "published",
-                        promptKey: status.key,
+                        unavailable: status.key !== "available",
+                        parentStateId: rec ? rec.state_id : null,
                     });
                 }
 
@@ -1466,7 +1889,7 @@
                     });
 
                     wireLayer("jurisdictions-fill", {
-                        // every jurisdiction is clickable; the box says whether it's published
+                        // every jurisdiction is clickable; the box says whether it's available
                         interactive: function () {
                             return true;
                         },
@@ -1485,6 +1908,7 @@
                     });
 
                     wireDropdown();
+                    wireZoomControls();
                     el("lul-statbox-close").addEventListener("click", closeBox);
                     document.addEventListener("keydown", function (e) {
                         if (e.key === "Escape") closeBox();
@@ -1498,14 +1922,13 @@
                         lastLegend = juris;
                         var keys = juris
                             ? [
-                                  [COVERED_FILL, "Published"],
-                                  [NO_ZONING_FILL, "Published, no zoning"],
-                                  [UNPUBLISHED_FILL, "Not yet published"],
+                                  [COVERED_FILL, "Available"],
+                                  [UNAVAILABLE_FILL, "Not yet available"],
                               ]
                             : STATE_STEPS.map(function (step) {
-                                  return [step.color, step.label + " published"];
-                              }).concat([[NO_DATA_FILL, "No data available"]]);
-                        el("lul-legend-title").textContent = juris ? "Coverage" : "Jurisdictions published";
+                                  return [step.color, step.label + " covered"];
+                              }).concat([[NO_DATA_FILL, "None covered yet"]]);
+                        el("lul-legend-title").textContent = juris ? "Coverage" : "Population covered";
                         el("lul-legend-keys").innerHTML = keys
                             .map(function (k) {
                                 return (
@@ -1553,30 +1976,26 @@
                             return r.json();
                         }),
                         loadJurisdictionData(),
-                        fetch(NO_ZONING_IDS)
-                            .then(function (r) {
-                                return r.ok ? r.json() : [];
-                            })
-                            .catch(function () {
-                                return [];
-                            }),
                     ])
                         .then(function (res) {
                             var states = res[0];
                             var rows = res[1];
-                            noZoningIds = new Set(res[2]);
 
                             indexJurisdictions(rows);
-                            renderRollup(rows);
 
                             simplifyBasemap();
                             var beforeId = firstSymbolLayerId();
-                            addStateLayers(joinStates(states), beforeId);
+                            // index after the join, so the stashed properties carry the
+                            // coverage numbers the panel reads
+                            var joined = joinStates(states);
+                            indexStates(joined);
+                            addStateLayers(joined, beforeId);
                             addJurisdictionLayers(beforeId);
-                            applyPublishedState();
+                            addStateFocusLayer(beforeId);
+                            applyAvailableState();
 
                             wireInteraction();
-                            fitToStates(states);
+                            fitToContinentalUS();
                             if (!usingSnapshot) setStatus(null);
                         })
                         .catch(function (err) {

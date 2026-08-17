@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Build the static geometry the coverage map draws.
 
-Produces two files in data/:
+Produces four files in data/:
 
-    states.geojson        51 states + DC, simplified. Drawn below z6.
-    jurisdictions.pmtiles 33k jurisdiction polygons, z5-z11. Drawn above z6.
+    states.geojson             51 states + DC, simplified. Drawn below z6.
+    jurisdictions.pmtiles      33k jurisdiction polygons, z5-z11. Drawn above z6.
+    jurisdiction_labels.pmtiles One label anchor per jurisdiction, z8+.
+    jurisdiction_bounds.json   id -> [w, s, e, n], for the panel's zoom-to controls.
 
-Only geometry and join keys are baked in. Published status, counts and dates
-all come from https://api.zoningatlas.org/atlas_jurisdictions at runtime, so
-this only needs rerunning when boundaries change.
+Only geometry and join keys are baked in. Published status, has_zoning, counts
+and dates all come from https://api.zoningatlas.org/atlas_jurisdictions at
+runtime, so this only needs rerunning when boundaries change.
 
 Requires the DB credentials in .env (VPN) and tippecanoe on PATH.
 """
@@ -215,21 +217,41 @@ def build_labels(conn):
         os.unlink(tmp)
 
 
-def build_no_zoning(conn):
-    """Ids of published jurisdictions that have no zoning at all.
+# Extent per jurisdiction, so the coverage panel can fly to one by name. Tiles
+# can't answer this: a jurisdiction the user picks is usually off-screen, and
+# tile geometry is clipped anyway.
+# ShiftLongitude puts every vertex in 0-360 before the envelope is taken. Without
+# it the Aleutians, which straddle the antimeridian, come back as a box spanning
+# the entire globe (-179 to +179) and a fitBounds on it zooms out to the world.
+BOUNDS_SQL = """
+    select j.id, st_xmin(e), st_ymin(e), st_xmax(e), st_ymax(e)
+    from website_jurisdiction j
+    cross join lateral (
+        select st_envelope(st_shiftlongitude(st_transform(j.geom_merc, 4326))) as e
+    ) env
+    where j.geom_merc is not null
+    order by j.id
+"""
 
-    The atlas_jurisdictions API doesn't expose `haszoning`, and zone_count is not a
-    safe stand-in (82 published rows disagree). So ship the ids as a side file and
-    apply them as feature state, the same way `published` is applied from the API.
-    Drop this once the API returns has_zoning.
-    """
-    path = os.path.join(OUT_DIR, "no_zoning_ids.json")
-    with conn.cursor() as cur:
-        cur.execute("select id from website_jurisdiction where published and haszoning is false order by id")
-        ids = [r[0] for r in cur.fetchall()]
+
+def build_bounds(conn):
+    path = os.path.join(OUT_DIR, "jurisdiction_bounds.json")
+    bounds = {}
+    with conn.cursor("bounds") as cur:
+        cur.itersize = 2000
+        cur.execute(BOUNDS_SQL)
+        for jid, w, s, e, n in cur:
+            # Undo the shift as a whole box, so the Americas come back negative and
+            # an antimeridian crosser stays contiguous (e.g. -180.2 to -179.1)
+            # rather than wrapping the long way round. MapLibre is fine past -180.
+            if e > 180:
+                w -= 360
+                e -= 360
+            # ~11 m of precision, which is well inside a fitBounds padding
+            bounds[jid] = [round(w, 4), round(s, 4), round(e, 4), round(n, 4)]
     with open(path, "w") as fh:
-        json.dump(ids, fh, separators=(",", ":"))
-    print(f"  no_zoning_ids.json: {len(ids)} ids, {os.path.getsize(path) / 1024:.0f} KB")
+        json.dump(bounds, fh, separators=(",", ":"))
+    print(f"  jurisdiction_bounds.json: {len(bounds)} boxes, {os.path.getsize(path) / 1e6:.1f} MB")
 
 
 def build_jurisdictions(conn):
@@ -274,9 +296,9 @@ def main():
     if only in (None, "jurisdictions", "labels"):
         print("Building jurisdiction labels...")
         build_labels(conn)
-    if only in (None, "jurisdictions", "zoning"):
-        print("Building no-zoning list...")
-        build_no_zoning(conn)
+    if only in (None, "jurisdictions", "bounds"):
+        print("Building jurisdiction bounds...")
+        build_bounds(conn)
     conn.close()
     print("Done.")
 
