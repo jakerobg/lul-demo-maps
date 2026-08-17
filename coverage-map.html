@@ -1020,7 +1020,7 @@
 
                 // ---------- data ----------
                 var jurisdictionById = {}; // id -> API record
-                var stateStats = {}; // state_id -> { available, population, availablePopulation, name }
+                var stateStats = {}; // state_id -> { covered, population, coveredPopulation, name }
                 var jurisdictionsByState = {}; // state_id -> [{ id, name }], sorted by name
                 var stateBounds = {}; // state_id -> LngLatBounds, off the geometry we load
                 var stateProps = {}; // state_id -> the joined feature properties
@@ -1063,6 +1063,11 @@
                 // Coverage is measured by population, not by counting jurisdictions:
                 // a state whose big cities are done is far more complete than a state
                 // with the same number of small towns finished.
+                //
+                // Its basis is `published` alone — a jurisdiction we've published that
+                // turned out to have no zoning is still ground we've covered, and this
+                // has to agree with the national coverage figures. That's a wider net
+                // than isAvailable(), which is about what we can hand over.
                 function indexJurisdictions(rows) {
                     rows.forEach(function (r) {
                         jurisdictionById[r.id] = r;
@@ -1070,17 +1075,17 @@
                         var s = stateStats[r.state_id];
                         if (!s) {
                             s = stateStats[r.state_id] = {
-                                available: 0,
+                                covered: 0,
                                 population: 0,
-                                availablePopulation: 0,
+                                coveredPopulation: 0,
                                 name: r.state_name,
                             };
                         }
                         var pop = r.population || 0;
                         s.population += pop;
-                        if (isAvailable(r)) {
-                            s.available += 1;
-                            s.availablePopulation += pop;
+                        if (r.published) {
+                            s.covered += 1;
+                            s.coveredPopulation += pop;
                         }
 
                         (jurisdictionsByState[r.state_id] || (jurisdictionsByState[r.state_id] = [])).push({
@@ -1102,7 +1107,7 @@
                     geojson.features.forEach(function (f) {
                         var s = stateStats[f.properties.id];
                         var population = s ? s.population : 0;
-                        var covered = s ? s.availablePopulation : 0;
+                        var covered = s ? s.coveredPopulation : 0;
                         f.properties.population = population;
                         f.properties.covered_population = covered;
                         f.properties.percentage = population ? Math.round((covered / population) * 100) : -1;
