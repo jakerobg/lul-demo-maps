@@ -35,22 +35,6 @@
                 display: flex;
                 flex-direction: column;
             }
-            .lul-map-eyebrow {
-                flex: 0 0 auto;
-                font-size: 13px;
-                font-weight: 700;
-                letter-spacing: 0.12em;
-                text-transform: uppercase;
-                color: rgba(57, 51, 72, 0.6);
-                margin-bottom: 20px;
-                display: flex;
-                justify-content: center;
-                align-items: flex-end;
-                gap: 12px;
-                flex-wrap: wrap;
-                text-align: center;
-            }
-
             /* ---- map shell ---- */
             #lul-coverage-map {
                 width: 100%;
@@ -67,6 +51,118 @@
                 cursor: default;
             }
 
+            /* ---- identity + national stats, top left ---- */
+            .lul-infocard {
+                position: absolute;
+                top: 12px;
+                left: 12px;
+                z-index: 4;
+                /* just wide enough that "zoning pages" stays on one line */
+                width: 212px;
+                box-sizing: border-box;
+                background: #fff;
+                border: 1px solid rgba(57, 51, 72, 0.12);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                padding: 12px 14px 10px;
+            }
+            .lul-infocard__head {
+                display: flex;
+                align-items: center;
+                gap: 11px;
+            }
+            .lul-infocard__logo {
+                width: 36px;
+                height: 36px;
+                flex: none;
+                display: block;
+            }
+            /* the vertical counterpart of the rules between the stats */
+            .lul-infocard__rule {
+                width: 1px;
+                flex: none;
+                align-self: stretch;
+                background: rgba(57, 51, 72, 0.15);
+            }
+            .lul-infocard__title {
+                font-size: 10.5px;
+                font-weight: 700;
+                line-height: 1.3;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: #393348;
+            }
+
+            /* shared caret for the two collapsible overlays */
+            .lul-caret-btn {
+                margin-left: auto;
+                flex: none;
+                display: flex;
+                align-items: center;
+                border: none;
+                background: none;
+                padding: 2px;
+                cursor: pointer;
+                color: rgba(57, 51, 72, 0.45);
+            }
+            .lul-caret-btn:hover {
+                color: #393348;
+            }
+            .lul-caret-btn svg {
+                width: 11px;
+                height: 11px;
+                transition: transform 0.15s ease;
+            }
+            .lul-infocard.is-collapsed .lul-caret-btn svg,
+            .lul-legend.is-collapsed .lul-caret-btn svg {
+                transform: rotate(-90deg);
+            }
+            .lul-infocard.is-collapsed #lul-infostats {
+                display: none;
+            }
+            /* One continuous card: a single rule under the header, then the four stats
+               with one unbroken vertical between the columns. No per-cell horizontals —
+               they only ever added up to broken segments. */
+            #lul-infostats {
+                display: grid;
+                /* equal columns; the card is sized so the wider label ("zoning pages")
+                   just fits, which keeps the leftover space in each column small */
+                grid-template-columns: 1fr 1fr;
+                border-top: 1px solid rgba(57, 51, 72, 0.1);
+                margin-top: 11px;
+                padding-top: 4px;
+            }
+            .lul-infostat {
+                /* no row gap, so the divider beside it runs the full height uninterrupted */
+                padding: 8px 0;
+            }
+            .lul-infostat:nth-child(2n) {
+                border-left: 1px solid rgba(57, 51, 72, 0.1);
+                padding-left: 12px;
+                margin-left: 12px;
+            }
+            .lul-infostat__label {
+                font-size: 9px;
+                font-weight: 600;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                line-height: 1.4;
+                color: rgba(57, 51, 72, 0.8);
+                white-space: nowrap;
+            }
+            .lul-infostat__num {
+                font-size: 1.375rem;
+                font-weight: 400;
+                line-height: 1;
+                letter-spacing: -0.03em;
+                color: #594496;
+                margin-top: 6px;
+            }
+            .lul-infostat__plus {
+                font-size: 0.6em;
+                margin-left: 0.15em;
+                vertical-align: 0.5em;
+            }
+
             /* ---- legend ---- */
             .lul-legend {
                 position: absolute;
@@ -75,7 +171,7 @@
                 z-index: 2;
                 background: #fff;
                 /* fixed so the attribution beside it can be offset by a known amount */
-                width: 180px;
+                width: 198px;
                 box-sizing: border-box;
                 padding: 12px 14px;
                 border-radius: 0;
@@ -83,13 +179,31 @@
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
                 pointer-events: none;
             }
+            /* the head is the hit target; the body below it collapses */
+            .lul-legend-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                cursor: pointer;
+                user-select: none;
+                /* the legend itself lets clicks through to the map — this doesn't */
+                pointer-events: auto;
+            }
             .lul-legend-title {
                 font-size: 10px;
                 font-weight: 700;
                 letter-spacing: 0.1em;
                 text-transform: uppercase;
                 color: rgba(57, 51, 72, 0.6);
-                margin-bottom: 9px;
+                /* the widest title is "Population covered" — the card is sized for it */
+                white-space: nowrap;
+            }
+            .lul-legend-body {
+                margin-top: 9px;
+            }
+            .lul-legend.is-collapsed .lul-legend-body {
+                display: none;
             }
             .lul-legend-key {
                 display: flex;
@@ -100,6 +214,18 @@
             }
             .lul-legend-key + .lul-legend-key {
                 margin-top: 7px;
+            }
+            /* only while the state choropleth is up — see renderLegend */
+            .lul-legend-note {
+                margin-top: 10px;
+                padding-top: 8px;
+                border-top: 1px solid rgba(57, 51, 72, 0.1);
+                font-size: 10px;
+                font-style: italic;
+                color: rgba(57, 51, 72, 0.5);
+            }
+            .lul-legend-note.is-hidden {
+                display: none;
             }
             .lul-legend-swatch {
                 width: 13px;
@@ -145,11 +271,11 @@
                 cursor: default;
             }
 
-            /* The attribution sits at the bottom left, just clear of the legend's 180px.
+            /* The attribution sits at the bottom left, just clear of the legend's 198px.
                It starts collapsed to the ⓘ (see createMap) and expands rightward into
                open map, capped so it can't run under the panel. */
             #lul-coverage-map .maplibregl-ctrl-bottom-left {
-                margin-left: 192px;
+                margin-left: 210px;
             }
             #lul-coverage-map .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
                 max-width: 55%;
@@ -214,6 +340,15 @@
             .lul-pill.is-available {
                 background: #c9d0a0;
                 color: #393348;
+            }
+            .lul-pill.is-unzoned {
+                background: #e2e0de;
+                color: rgba(57, 51, 72, 0.7);
+            }
+            /* the headline kills its line box (font-size: 0), so the gap between two
+               pills has to be a margin rather than whitespace */
+            .lul-pill + .lul-pill {
+                margin-left: 6px;
             }
 
             /* ---- pinned stats panel ---- */
@@ -658,10 +793,12 @@
             }
 
             /* ---- status / error ---- */
+            /* centred along the top: the info card owns the left corner now */
             .lul-status {
                 position: absolute;
                 top: 12px;
-                left: 12px;
+                left: 50%;
+                transform: translateX(-50%);
                 z-index: 6;
                 background: #fff;
                 border: 1px solid rgba(57, 51, 72, 0.15);
@@ -681,34 +818,77 @@
             }
 
             @media (max-width: 700px) {
+                /* Keeps its width and docks to the bottom; only once the viewport is
+                   narrower than the panel does it start giving width back. */
                 .lul-statbox {
-                    width: auto;
                     left: 12px;
                     right: 12px;
                     top: auto;
                     bottom: 12px;
+                    width: 300px;
+                    max-width: calc(100% - 24px);
+                    margin-left: auto;
                 }
-                .lul-legend {
-                    display: none;
-                }
-                /* nothing to clear once the legend is gone */
-                #lul-coverage-map .maplibregl-ctrl-bottom-left {
-                    margin-left: 0;
+                /* Both overlays stay, collapsed to their headers — see wireCollapsibles.
+                   The legend keeps its 198px so the attribution offset still clears it. */
+                .lul-infocard {
+                    max-width: calc(100% - 24px);
                 }
             }
         </style>
 
         <section class="lul-coverage">
-            <div class="lul-map-eyebrow">
-                <div>Zoom into our interactive map to see if your geography is available</div>
-            </div>
-
             <div id="lul-coverage-map">
+                <div class="lul-infocard">
+                    <div class="lul-infocard__head">
+                        <img
+                            class="lul-infocard__logo"
+                            src="https://images.squarespace-cdn.com/content/v1/6961cb51f8abb243882b5e71/543f2204-d8e1-45d8-bd11-202ad9158a40/LUL+logo+purple.png?format=1500w"
+                            alt="Land Use Labs"
+                        />
+                        <div class="lul-infocard__rule"></div>
+                        <div class="lul-infocard__title">Land Use Labs National Coverage Map</div>
+                        <button
+                            class="lul-caret-btn"
+                            id="lul-infocard-toggle"
+                            type="button"
+                            aria-label="Show or hide coverage stats"
+                        >
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path
+                                    d="M5 8l5 5 5-5"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="lul-infostats"></div>
+                </div>
+
                 <div class="lul-status" id="lul-status">Loading coverage data…</div>
 
                 <div class="lul-legend">
-                    <div class="lul-legend-title" id="lul-legend-title">Coverage</div>
-                    <div id="lul-legend-keys"></div>
+                    <div class="lul-legend-head" id="lul-legend-head">
+                        <span class="lul-legend-title" id="lul-legend-title">Coverage</span>
+                        <button class="lul-caret-btn" type="button" aria-label="Show or hide the key" tabindex="-1">
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path
+                                    d="M5 8l5 5 5-5"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="lul-legend-body">
+                        <div id="lul-legend-keys"></div>
+                        <div class="lul-legend-note" id="lul-legend-note">Zoom in to see jurisdiction view</div>
+                    </div>
                 </div>
 
                 <div class="lul-hovertip" id="lul-hovertip"></div>
@@ -825,6 +1005,20 @@
                 // One label anchor per jurisdiction, so multi-part ones aren't named twice.
                 var JURISDICTION_LABEL_TILES = "pmtiles://data/jurisdiction_labels.pmtiles";
 
+                // National rollup behind the info card's four stats. Same endpoint and
+                // same figures as coverage-stats.html, so the two never disagree.
+                var COVERAGE_API = "https://api.zoningatlas.org/nza_coverage";
+
+                // label + where the number comes from. `field` reads the API row;
+                // `fallback` stands in when the fetch fails. dp = decimal places on the
+                // abbreviated number, unit forces K/M/B instead of picking by magnitude.
+                var INFO_STATS = [
+                    { label: "parcels", fallback: 90000000, dp: 0, unit: "M" },
+                    { label: "acres", field: "acres_covered", fallback: 1424905646, dp: 1 },
+                    { label: "residents", field: "population_covered", fallback: 225165866, dp: 0 },
+                    { label: "zoning pages", field: "pages_analyzed", fallback: 1343115, dp: 1 },
+                ];
+
                 // Bounding box per jurisdiction, {id: [w, s, e, n]}, built by
                 // build_coverage_data.py. Fetched lazily, only once someone opens the
                 // jurisdiction picker, since it's a couple of MB nobody else needs.
@@ -908,6 +1102,79 @@
                         return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
                     });
                 };
+
+                // ---------- info card ----------
+                // Number formatting lifted from coverage-stats.html so the figures read
+                // identically in both places: K/M/B by magnitude unless forced, anything
+                // under 100,000 with commas, and a smaller trailing "+".
+                function roundDp(x, dp) {
+                    if (dp === 0) return String(Math.round(x));
+                    return (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, "");
+                }
+
+                function abbr(n, dp, unit) {
+                    if (dp == null) dp = 1;
+                    var a = Math.abs(n);
+                    if (unit === "B" || (!unit && a >= 1e9)) return roundDp(n / 1e9, dp) + "B";
+                    if (unit === "M" || (!unit && a >= 1e6)) return roundDp(n / 1e6, dp) + "M";
+                    if (unit === "K" || (!unit && a > 99999)) return roundDp(n / 1e3, dp) + "K";
+                    return Math.round(n).toLocaleString("en-US");
+                }
+
+                function renderInfoStats(row) {
+                    el("lul-infostats").innerHTML = INFO_STATS.map(function (s) {
+                        var v = row && s.field && typeof row[s.field] === "number" ? row[s.field] : s.fallback;
+                        return (
+                            '<div class="lul-infostat"><div class="lul-infostat__label">' +
+                            s.label +
+                            '</div><div class="lul-infostat__num">' +
+                            abbr(v, s.dp, s.unit) +
+                            '<span class="lul-infostat__plus">+</span></div></div>'
+                        );
+                    }).join("");
+                }
+
+                // Draw the fallbacks straight away so the card is never empty, then
+                // correct them once the API answers.
+                function loadInfoStats() {
+                    renderInfoStats(null);
+                    fetch(COVERAGE_API, { headers: { Accept: "application/json" } })
+                        .then(function (r) {
+                            if (!r.ok) throw new Error("HTTP " + r.status);
+                            return r.json();
+                        })
+                        .then(function (data) {
+                            renderInfoStats(Array.isArray(data) ? data[0] : data);
+                        })
+                        .catch(function (err) {
+                            console.warn("Coverage stats unavailable, showing fallbacks:", err);
+                        });
+                }
+
+                // The two map overlays fold up to their headers. Open by default on a
+                // wide map, folded on a narrow one where they'd cover most of it —
+                // reapplied whenever the viewport crosses that breakpoint, so a manual
+                // toggle lasts until the layout itself changes.
+                function wireCollapsibles() {
+                    var card = document.querySelector(".lul-infocard");
+                    var legend = document.querySelector(".lul-legend");
+                    var narrow = window.matchMedia("(max-width: 700px)");
+
+                    function applyDefault(mq) {
+                        card.classList.toggle("is-collapsed", mq.matches);
+                        legend.classList.toggle("is-collapsed", mq.matches);
+                    }
+                    applyDefault(narrow);
+                    if (narrow.addEventListener) narrow.addEventListener("change", applyDefault);
+
+                    el("lul-infocard-toggle").addEventListener("click", function () {
+                        card.classList.toggle("is-collapsed");
+                    });
+                    // the whole header is the target, not just the caret
+                    el("lul-legend-head").addEventListener("click", function () {
+                        legend.classList.toggle("is-collapsed");
+                    });
+                }
 
                 // ---------- map ----------
                 // maplibre-gl v4 wants the promise-based handler (tilev4). The plain
@@ -1050,14 +1317,18 @@
                     return boundsRequest;
                 }
 
-                // The only distinction the map draws: can we hand over data for this
-                // jurisdiction today? A published jurisdiction with no zoning can't be
-                // sold, so it reads the same as one we haven't published — no separate
-                // colour, and nothing that gives away its publication status.
-                // has_zoning is null for jurisdictions we haven't looked at yet, which
-                // are unpublished anyway, so plain truthiness is enough.
+                // The only distinction the map draws: have we published this jurisdiction?
+                // One that turned out to have no zoning still counts — it's covered
+                // ground, and the panel tags it as unzoned rather than hiding it in with
+                // the unpublished.
                 function isAvailable(rec) {
-                    return !!(rec && rec.published && rec.has_zoning);
+                    return !!(rec && rec.published);
+                }
+
+                // has_zoning is null for jurisdictions nobody has looked at yet, which are
+                // unpublished anyway, so this only ever speaks about published ones.
+                function isUnzoned(rec) {
+                    return !!(rec && rec.published && !rec.has_zoning);
                 }
 
                 // Coverage is measured by population, not by counting jurisdictions:
@@ -1799,8 +2070,8 @@
                 // two states only: we can hand over data, or we can't yet
                 function jurisdictionStatus(rec) {
                     return isAvailable(rec)
-                        ? { key: "available", label: "Available" }
-                        : { key: "unavailable", label: "Not yet available" };
+                        ? { key: "available", label: "Data Available" }
+                        : { key: "unavailable", label: "Data Unavailable" };
                 }
 
                 function jurisdictionTip(p) {
@@ -1831,7 +2102,15 @@
                         kind: "Jurisdiction",
                         abbr: p.st,
                         name: p.name,
-                        headline: '<span class="lul-pill is-' + status.key + '">' + status.label + "</span>",
+                        headline:
+                            '<span class="lul-pill is-' +
+                            status.key +
+                            '">' +
+                            status.label +
+                            "</span>" +
+                            // published, but there's no zoning to hand over — say so
+                            // beside the status rather than in place of it
+                            (isUnzoned(rec) ? '<span class="lul-pill is-unzoned">No Zoning</span>' : ""),
                         pill: true,
                         bar: null,
                         rows: rows,
@@ -1918,10 +2197,13 @@
                                   [COVERED_FILL, "Available"],
                                   [UNAVAILABLE_FILL, "Not yet available"],
                               ]
-                            : STATE_STEPS.map(function (step) {
+                            : // no zero key: every state has at least some coverage
+                              STATE_STEPS.map(function (step) {
                                   return [step.color, step.label + " covered"];
-                              }).concat([[NO_DATA_FILL, "None covered yet"]]);
+                              });
                         el("lul-legend-title").textContent = juris ? "Coverage" : "Population covered";
+                        // the nudge only makes sense while there's somewhere to zoom to
+                        el("lul-legend-note").classList.toggle("is-hidden", juris);
                         el("lul-legend-keys").innerHTML = keys
                             .map(function (k) {
                                 return (
@@ -1996,6 +2278,10 @@
                             setStatus("Failed to load the map: " + err.message, true);
                         });
                 }
+
+                // independent of the map, so they don't wait on tiles or the style
+                loadInfoStats();
+                wireCollapsibles();
 
                 resolveStyle().then(function (style) {
                     createMap(style).on("load", onMapLoad);
