@@ -70,6 +70,10 @@
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
                 padding: 12px 14px 10px;
             }
+            /* embeds that ask for a bare map — see the `stats` URL parameter */
+            .lul-infocard.is-hidden {
+                display: none;
+            }
             .lul-infocard__head {
                 display: flex;
                 align-items: center;
@@ -2288,8 +2292,20 @@
                         });
                 }
 
+                // Embeds opt out of the logo + stats card with ?stats=0, so the same page
+                // can be framed twice on one site: once branded, once as a bare map.
+                function showInfoCard() {
+                    var v = new URLSearchParams(window.location.search).get("stats");
+                    return !/^(0|false|no|off|hide)$/i.test(v || "");
+                }
+
                 // independent of the map, so they don't wait on tiles or the style
-                loadInfoStats();
+                if (showInfoCard()) {
+                    loadInfoStats();
+                } else {
+                    // skip the coverage fetch too — nothing would read it
+                    document.querySelector(".lul-infocard").classList.add("is-hidden");
+                }
                 wireCollapsibles();
 
                 resolveStyle().then(function (style) {
