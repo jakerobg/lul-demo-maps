@@ -29,9 +29,14 @@
                 margin: 0 auto;
                 padding: 20px 20px 20px;
                 box-sizing: border-box;
-                /* Fixed overall height so the iframe never needs resizing: the map
-                   gives back exactly what the header takes when the title wraps. */
-                height: 680px;
+                /* Fills whatever height the frame gives it — 100vh is the iframe's own
+                   viewport, so the host sizes the map by sizing the iframe. The floor is
+                   the point where the info card and the key would meet in the left
+                   margin; below it they'd overlap, so the map stops shrinking there and
+                   the frame scrolls instead. */
+                height: 100vh;
+                min-height: 450px;
+                max-height: 900px;
                 display: flex;
                 flex-direction: column;
             }
@@ -818,6 +823,10 @@
             }
 
             @media (max-width: 700px) {
+                /* both overlays start folded here, so they need far less headroom */
+                .lul-coverage {
+                    min-height: 320px;
+                }
                 /* Keeps its width and docks to the bottom; only once the viewport is
                    narrower than the panel does it start giving width back. */
                 .lul-statbox {
