@@ -27,9 +27,10 @@
                class names scoped to this map (lul-rastermap-*), so embedding it in a
                Squarespace page can't collide with the standalone .lul-data-* buttons. */
             .lul-rastermap-tabs {
+                /* the active tab is the tertiary button: filled in ink, not the
+                   primary purple */
                 --lulrm-ink: #393347;
-                --lulrm-primary: #594496;
-                --lulrm-primary-hover: #3f2e70;
+                --lulrm-ink-hover: #22202b;
                 --lulrm-secondary-hover: #f9f9f9;
                 --lulrm-tab-pad: 10px 26px;
 
@@ -65,13 +66,13 @@
                 background: var(--lulrm-secondary-hover);
             }
             .lul-rastermap-tabs .lul-rastermap__tab.lulrm-is-active {
-                background: var(--lulrm-primary);
-                border-color: var(--lulrm-primary);
+                background: var(--lulrm-ink);
+                border-color: var(--lulrm-ink);
                 color: #ffffff;
             }
             .lul-rastermap-tabs .lul-rastermap__tab.lulrm-is-active:hover {
-                background: var(--lulrm-primary-hover);
-                border-color: var(--lulrm-primary-hover);
+                background: var(--lulrm-ink-hover);
+                border-color: var(--lulrm-ink-hover);
             }
             /* title on the left, raster tabs pushed to the right on the same line */
             .lul-rastermap__eyebrow {

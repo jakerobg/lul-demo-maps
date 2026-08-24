@@ -1048,6 +1048,11 @@
                         staleTileHost: "tiles.zoningatlas1.org",
                         // protomaps schema
                         drop: ["roads", "transit_stations"],
+                        // Dropped by layer id rather than source-layer: the national,
+                        // state and county boundaries all share the `boundaries` layer,
+                        // and only the national one is redundant here — our own state
+                        // and jurisdiction outlines already draw the borders that matter.
+                        dropLayers: ["overlay_plain_boundaries_national"],
                         font: "Montserrat SemiBold",
                         attribution: "Basemap: National Zoning Atlas",
                     },
@@ -1467,8 +1472,13 @@
                 // Drop the road network and every basemap label: our own vector layers
                 // already name the states and jurisdictions.
                 function simplifyBasemap() {
+                    var byId = BASEMAP.dropLayers || [];
                     (map.getStyle().layers || []).forEach(function (layer) {
-                        if (layer.type === "symbol" || BASEMAP.drop.indexOf(layer["source-layer"]) !== -1) {
+                        if (
+                            layer.type === "symbol" ||
+                            BASEMAP.drop.indexOf(layer["source-layer"]) !== -1 ||
+                            byId.indexOf(layer.id) !== -1
+                        ) {
                             map.removeLayer(layer.id);
                         }
                     });
