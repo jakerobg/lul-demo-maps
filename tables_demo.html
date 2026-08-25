@@ -2,36 +2,56 @@
     .lul-tables-demo {
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     }
+    /* Table switcher tabs. Same button system as the raster map's switcher: the
+       active tab is the tertiary button, filled in ink. */
     .lul-tabs {
+        --lult-ink: #393347;
+        --lult-ink-hover: #22202b;
+        --lult-secondary-hover: #f9f9f9;
+        --lult-tab-pad: 10px 26px;
+
         display: flex;
+        align-items: center;
+        /* pushed to the right, like the raster map's tabs */
+        justify-content: flex-end;
         gap: 8px;
         margin-bottom: 18px;
         flex-wrap: wrap;
     }
     .lul-tab {
+        -webkit-appearance: none;
+        appearance: none;
         font-family: inherit;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        padding: 9px 16px;
-        border: 1px solid rgba(57, 51, 72, 0.15);
-        background: #fff;
-        color: rgba(57, 51, 72, 0.5);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+        font-size: 1rem;
+        line-height: 1.2;
+        padding: var(--lult-tab-pad);
+        border: 1px solid transparent;
+        border-radius: 0;
+        letter-spacing: 0.02em;
         cursor: pointer;
-        border-radius: 4px;
+        background: transparent;
+        border-color: var(--lult-ink);
+        color: var(--lult-ink);
         transition:
-            background 0.15s ease,
-            color 0.15s ease,
-            border-color 0.15s ease;
+            background 0.25s ease,
+            border-color 0.25s ease,
+            color 0.25s ease;
     }
     .lul-tab:hover {
-        color: #393348;
-        border-color: rgba(57, 51, 72, 0.35);
+        background: var(--lult-secondary-hover);
     }
     .lul-tab.active {
-        background: #393348;
-        color: #fff;
-        border-color: #393348;
+        background: var(--lult-ink);
+        border-color: var(--lult-ink);
+        color: #ffffff;
+    }
+    .lul-tab.active:hover {
+        background: var(--lult-ink-hover);
+        border-color: var(--lult-ink-hover);
     }
     .lul-tab-panel {
         display: none;

@@ -24,10 +24,10 @@
             .lul-coverage {
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
                 color: #393348;
-                /* No width cap: the map takes whatever the embed gives it and the
-                   padding keeps it off the edges. */
+                /* No width cap and no padding: the map fills the frame edge to edge,
+                   and the embed decides how much room it gets. */
                 margin: 0 auto;
-                padding: 20px 20px 20px;
+                padding: 0;
                 box-sizing: border-box;
                 /* Fills whatever height the frame gives it — 100vh is the iframe's own
                    viewport, so the host sizes the map by sizing the iframe. The floor is
