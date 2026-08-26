@@ -157,11 +157,22 @@
                 // Keyless and self-hosted by OpenFreeMap: tiles, fonts and sprites all
                 // come from their domain. maplibre-gl-leaflet puts the GL canvas in
                 // Leaflet's tilePane, so every overlay added below still draws on top.
-                L.maplibreGL({
+                var basemap = L.maplibreGL({
                     style: "https://tiles.openfreemap.org/styles/positron",
                     attribution:
                         '<a href="https://openfreemap.org">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 }).addTo(map);
+
+                // Route shields (the I-15 / US-95 badges) are busy under the zoning
+                // colours, so drop them once the style is in. Street and place names
+                // stay — they're separate layers.
+                var SHIELD_LAYERS = ["highway-shield-non-us", "highway-shield-us-interstate", "road_shield_us"];
+                var glMap = basemap.getMaplibreMap();
+                glMap.on("load", function () {
+                    SHIELD_LAYERS.forEach(function (id) {
+                        if (glMap.getLayer(id)) glMap.removeLayer(id);
+                    });
+                });
 
                 // Tiny opacity slider (top-right).
                 var opacityCtl = L.control({ position: "topright" });
