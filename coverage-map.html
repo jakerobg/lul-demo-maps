@@ -999,7 +999,7 @@
                 var BASEMAP = BASEMAPS.nza;
 
                 // Zoom at which the state choropleth hands off to individual jurisdictions.
-                var SWAP_ZOOM = 5.5;
+                var SWAP_ZOOM = 5.0;
 
                 // How many zoom levels the handoff is spread over. Bigger = softer, more
                 // gradual fade; 0 = hard cut with no fade at all. Applies to both sides:
@@ -1010,7 +1010,7 @@
                 // Opacity each layer fades to/from at the handoff. Raise these toward the
                 // full values to keep more color through the transition.
                 var STATE_FADE_TO = 0.7;
-                var JURISDICTION_FADE_FROM = 0.5;
+                var JURISDICTION_FADE_FROM = 0.8;
 
                 // Hover keeps a feature's own fill and just leans on the opacity, so the
                 // colour never shifts out of the legend's scale.
