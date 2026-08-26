@@ -1974,6 +1974,14 @@
                         : { key: "unavailable", label: "Data Unavailable" };
                 }
 
+                // Prefer the API's name over the tiles'. The tiles are rebuilt only when
+                // boundaries change, so their names go stale against renames like the
+                // "(Unincorporated)" suffix on county remainders; the API is current.
+                function jurisdictionName(p) {
+                    var rec = jurisdictionById[p.id];
+                    return (rec && rec.name) || p.name;
+                }
+
                 function jurisdictionTip(p) {
                     var rec = jurisdictionById[p.id];
                     var status = jurisdictionStatus(rec);
@@ -1983,7 +1991,7 @@
                         "<b>" +
                         ((rec && rec.state_name) || p.st || "") +
                         "</b><div class='lul-hovertip-pct'>" +
-                        p.name +
+                        jurisdictionName(p) +
                         "</div><div class='lul-hovertip-note'>" +
                         status.label +
                         "</div>"
@@ -2001,7 +2009,7 @@
                     openBox({
                         kind: "Jurisdiction",
                         abbr: p.st,
-                        name: p.name,
+                        name: jurisdictionName(p),
                         headline:
                             '<span class="lul-pill is-' +
                             status.key +

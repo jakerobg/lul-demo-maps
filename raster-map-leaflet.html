@@ -394,15 +394,32 @@
                         '<a href="https://openfreemap.org">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 }).addTo(map);
 
-                // Route shields (the I-15 / US-95 badges) are busy under the zoning
-                // colours, so drop them once the style is in. Street and place names
-                // stay — they're separate layers.
-                var SHIELD_LAYERS = ["highway-shield-non-us", "highway-shield-us-interstate", "road_shield_us"];
+                // Basemap layers to drop once the style is in, so the raster reads
+                // against a flat surface:
+                //   - route shields (the I-15 / US-95 badges) are busy under the colours
+                //   - the landcover and park fills are what shade the mountains and open
+                //     land grey-green; without them the basemap is a plain white ground
+                //     and every tint on screen belongs to the zoning data
+                // Street names, place names and water are kept.
+                var DROP_LAYERS = [
+                    "highway-shield-non-us",
+                    "highway-shield-us-interstate",
+                    "road_shield_us",
+                    "park",
+                    "landcover_wood",
+                    "landcover_glacier",
+                    "landcover_ice_shelf",
+                    "landuse_residential",
+                ];
                 var glMap = basemap.getMaplibreMap();
                 glMap.on("load", function () {
-                    SHIELD_LAYERS.forEach(function (id) {
+                    DROP_LAYERS.forEach(function (id) {
                         if (glMap.getLayer(id)) glMap.removeLayer(id);
                     });
+                    // the style's ground is a faint grey; make it white to match
+                    if (glMap.getLayer("background")) {
+                        glMap.setPaintProperty("background", "background-color", "#ffffff");
+                    }
                 });
 
                 // Build a value -> "rgb(...)" lookup from a raster's class list.
