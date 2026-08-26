@@ -175,21 +175,42 @@ LABEL_SQL = """
 LABEL_MIN_ZOOM = 8
 
 
+def api_names():
+    """id -> display name, from the atlas_jurisdictions snapshot.
+
+    The snapshot is what the coverage map itself reads, so labels have to agree
+    with it or a jurisdiction is named one way on the map and another in the
+    panel. It also carries naming the database doesn't, e.g. the
+    "(Unincorporated)" suffix on county remainders.
+    """
+    path = os.path.join(OUT_DIR, "atlas_jurisdictions.json")
+    if not os.path.exists(path):
+        print(f"  no {os.path.basename(path)}; falling back to database names")
+        return {}
+    with open(path) as fh:
+        return {r["id"]: r["name"] for r in json.load(fh) if r.get("name")}
+
+
 def build_labels(conn):
     out = os.path.join(OUT_DIR, "jurisdiction_labels.pmtiles")
+    names = api_names()
     fd, tmp = tempfile.mkstemp(suffix=".geojsonl")
     os.close(fd)
     try:
         count = 0
+        renamed = 0
         with conn.cursor("labels") as cur, open(tmp, "w") as fh:
             cur.itersize = 1000
             cur.execute(LABEL_SQL)
             for jid, name, postcode, geom in cur:
+                label = names.get(jid, name)
+                if label != name:
+                    renamed += 1
                 fh.write(
                     json.dumps(
                         {
                             "type": "Feature",
-                            "properties": {"id": jid, "name": name, "st": postcode},
+                            "properties": {"id": jid, "name": label, "st": postcode},
                             "geometry": json.loads(geom),
                         },
                         separators=(",", ":"),
@@ -197,7 +218,7 @@ def build_labels(conn):
                 )
                 fh.write("\n")
                 count += 1
-        print(f"  streamed {count} label points, tiling...")
+        print(f"  streamed {count} label points ({renamed} named from the snapshot), tiling...")
         subprocess.run(
             [
                 "tippecanoe",
